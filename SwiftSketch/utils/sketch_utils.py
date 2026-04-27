@@ -975,3 +975,59 @@ def _batched_combinations(n, k, batch_size):
         if not batch:
             break
         yield batch
+        
+def brute_force_reduce_strokes_to_image_features(
+    control_points,
+    target_image_features,
+    features_model,
+    target_num_paths,
+    canvas_width,
+    canvas_height,
+    batch_size=256,
+):
+    """
+    control_points: [16, 4, 2] denormalized stroke control points
+    target_image_features: [C, H, W] CLIP middle features of the original image
+    features_model: CLIPMidlleFeutures instance
+    """
+    num_paths = control_points.shape[0]
+    assert 1 <= target_num_paths <= num_paths
+    
+    if target_num_paths == num_paths:
+        return control_points, list(range(num_paths)), 0.0
+    
+    device = control_points.device
+    target = target_image_features.unsqueeze(0).to(device).float()
+    target = F.normalize(target.flatten(1), dim=1)
+    
+    best_loss = float("inf")
+    best_indices = None
+    
+    with torch.no_grad():
+        for combo_batch in _batched_combinations(num_paths, target_num_pathsm batch_size):
+            indices = torch.tensor(combo_batch, device=device, dtype=torch.long)
+            candidate_points = control_points[indices]
+            
+            candidate_images, _ = rander_image_from_points(
+                candidate_points,
+                canvas_width,
+                canvas_height,
+                return_svg_content=False,
+            )
+            
+            candidate_images = candidate_images.permute(0, 3, 1, 2)
+            candidate_features = features_model.get_clip_features_from_middle_layer(
+                candidate_images
+            ).float()
+            
+            candidate_features = F.normalize(candidate_features.flatten(1), dim=1)
+            losses = 1.0 - (candidate_features * target).sum(dim=1)
+            
+            min_pos = torch.argmin(losses)
+            min_loss = losses[min_pos].item()
+            
+            if min_loss < best_loss:
+                best_loss = min_loss
+                best_indices = list(combo_batch[min_pos.item()])
+                
+    return control_points[best_indices], best_indices, best_loss
