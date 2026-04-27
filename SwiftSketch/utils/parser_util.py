@@ -215,6 +215,11 @@ def add_generate_options(parser):
                        help="If 1 and the input is a dict, save the diffusion process SVG into the input dict.")
     group.add_argument("--refine_model_path", default='',  type=str,
                        help="Path to refine model####.pt file to be sampled.")
+    group.add_argument("--reduce_num_paths", default=0, type=int,
+                   help="If > 0, reduce generated strokes to this number by exhaustive search.")
+    group.add_argument("--reduce_search_batch_size", default=256, type=int,
+                   help="Number of stroke combinations evaluated at once.")
+
     
    
  

@@ -208,6 +208,11 @@ def add_generate_options(parser):
                        help="For classifier-free sampling - specifies the s parameter, as defined in the paper.")
     group.add_argument("--model_path", default='', type=str,
                        help="Path to model####.pt file to be sampled.")
+    group.add_argument("--reduce_num_paths", default=0, type=int,
+                   help="If > 0, reduce generated strokes to this number by exhaustive search.")
+    group.add_argument("--reduce_search_batch_size", default=256, type=int,
+                   help="Number of stroke combinations evaluated at once.")
+
     
     
  
