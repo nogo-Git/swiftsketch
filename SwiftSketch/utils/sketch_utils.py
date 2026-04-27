@@ -968,5 +968,10 @@ def extract_control_points_from_svg(svg_content):
     points= torch.tensor(control_points) #(num_paths, 4, 2)
     return points, canvas_size
 
-
-
+def _batched_combinations(n, k, batch_size):
+    iterator = combinations(range(n), k)
+    while True:
+        batch = list(islice(iterator, batch_size))
+        if not batch:
+            break
+        yield batch
