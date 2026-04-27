@@ -20,7 +20,8 @@ from scipy.ndimage import  binary_erosion, binary_dilation
 import re
 
 from itertools import combinations, islice
-
+import math
+from tqdm import tqdm
 
 def fix_image_scale(im):
     im_np = np.array(im) / 255
@@ -1003,8 +1004,16 @@ def brute_force_reduce_strokes_to_image_features(
     best_loss = float("inf")
     best_indices = None
     
+    total_combinations = math.comb(num_paths, target_num_paths)
+    
+    pbar = tqdm(
+        total=total_combinations,
+        desc=f"reduce {num_paths}->{target_num_paths}",
+        unit="combo",
+    )
+    
     with torch.no_grad():
-        for combo_batch in _batched_combinations(num_paths, target_num_pathsm batch_size):
+        for combo_batch in _batched_combinations(num_paths, target_num_paths, batch_size):
             indices = torch.tensor(combo_batch, device=device, dtype=torch.long)
             candidate_points = control_points[indices]
             
@@ -1029,5 +1038,10 @@ def brute_force_reduce_strokes_to_image_features(
             if min_loss < best_loss:
                 best_loss = min_loss
                 best_indices = list(combo_batch[min_pos.item()])
+                
+            pbar.update(len(combo_batch))
+            pbar.set_postfix(best_loss=f"{best_loss:.6f}")
+            
+    pbar.close()
                 
     return control_points[best_indices], best_indices, best_loss
