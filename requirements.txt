@@ -32,7 +32,6 @@ certifi==2024.2.2
 cffi==1.16.0
 charset-normalizer==3.3.2
 click==8.1.7
-cmake==3.29.1
 comm==0.2.2
 contourpy==1.2.1
 controlnet-aux==0.0.9
@@ -63,7 +62,6 @@ fiftyone==1.0.1
 fiftyone-brain==0.17.0
 fiftyone_db==1.1.7
 filelock==3.13.4
-flash-attn==2.5.8
 Flask==3.1.0
 fonttools==4.51.0
 fqdn==1.5.1

@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+
+# outputs
+SwiftSketch/output_sketches/
+
+# models
+SwiftSketch/save/
+*.pt
+*.pth
+
+# diffvg
+diffvg/
+
+# その他
+*.log
+*.tmp
