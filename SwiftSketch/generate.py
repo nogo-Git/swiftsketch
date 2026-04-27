@@ -213,6 +213,16 @@ def main():
             refine_model_output_points= refine_model_output
             refine_model_output_points= sketch_utils.denormalize_points(refine_model_output_points, args.scaling_factor, args.canvas_width) #convert the normalized points back to the original range [224,224] 
             
+            if args.topk_num_paths > 0:
+                refine_model_output_points = refine_model_output_points[:, :args.topk_num_paths]
+                
+            _, final_svg_content_list = sketch_utils.rander_image_from_points(
+                refine_model_output_points,
+                args.canvas_width,
+                args.canvas_height,
+                return_svg_content=True,
+            )
+            
             if args.reduce_num_paths > 0:
                 reduced_points_list = []
                 
