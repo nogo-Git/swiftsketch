@@ -210,6 +210,26 @@ def main():
             refine_model_output = refine_model(x=diffusion_control_points, timesteps=t, image_features=image_features) #shape [bs,nstrokes, ncpoints, nfeats]
             refine_model_output_points= refine_model_output
             refine_model_output_points= sketch_utils.denormalize_points(refine_model_output_points, args.scaling_factor, args.canvas_width) #convert the normalized points back to the original range [224,224] 
+            
+            if args.reduce_num_paths > 0:
+                reduced_points_list = []
+                
+                for points, target_features in zip(refine_model_output_points, image_features):
+                    reduced_points, best_indices, best_loss = sketch_utils.brute_force_reduce_strokes_to_image_features(
+                        points,
+                        target_image_features=target_features,
+                        features_model=features_model,
+                        target_num_paths=args.reduce_num_paths,
+                        canvas_width=args.canvas_width,
+                        canvas_height=args.canvas_height,
+                        batch_size=args.reduce_search_batch_size,
+                    )
+                    
+                    print(f"selected strokes={best_indices}, feature_loss={best_loss:.6f}")
+                    reduced_points_list.append(reduced_points)
+                    
+                refine_model_output_points = torch.stack(reduced_points_list)
+            
             _, final_svg_content_list = sketch_utils.rander_image_from_points(refine_model_output_points,args.canvas_width, args.canvas_height, return_svg_content=True)
 
             if target_is_dict and args.save_final_sketch_in_dict:
