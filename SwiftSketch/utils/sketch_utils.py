@@ -19,6 +19,8 @@ import tempfile
 from scipy.ndimage import  binary_erosion, binary_dilation
 import re
 
+from itertools import combinations, islice
+
 
 def fix_image_scale(im):
     im_np = np.array(im) / 255
