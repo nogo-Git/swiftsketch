@@ -18,6 +18,7 @@ from torchvision.transforms.functional import normalize
 import tempfile
 from scipy.ndimage import  binary_erosion, binary_dilation
 import re
+from tqdm import tqdm
 
 
 def fix_image_scale(im):

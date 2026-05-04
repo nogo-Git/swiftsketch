@@ -19,7 +19,7 @@ from transformers import AutoModelForImageSegmentation
 def main():
     args = generate_args()
     if args.inference_num_paths > 0:
-    args.num_paths = args.inference_num_paths
+        args.num_paths = args.inference_num_paths
     fixseed(args.seed)
     dist_util.setup_dist(args.device)
 
