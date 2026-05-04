@@ -215,6 +215,23 @@ def add_generate_options(parser):
                        help="If 1 and the input is a dict, save the diffusion process SVG into the input dict.")
     group.add_argument("--refine_model_path", default='',  type=str,
                        help="Path to refine model####.pt file to be sampled.")
+    group.add_argument("--inference_num_paths", default=0, type=int,
+                   help="If > 0, override the number of strokes used during generation.")
+    group.add_argument("--opacity_optimize_num_paths", default=0, type=int,
+                   help="If > 0, optimize continuous stroke opacity gates and keep this many strokes.")
+    group.add_argument("--opacity_optimize_steps", default=300, type=int,
+                    help="Number of optimization steps for continuous opacity gate selection.")
+    group.add_argument("--opacity_optimize_lr", default=0.05, type=float,
+                    help="Learning rate for opacity gate optimization.")
+    group.add_argument("--opacity_count_weight", default=1.0, type=float,
+                    help="Weight for matching the sum of opacity gates to the target stroke count.")
+    group.add_argument("--opacity_binary_weight", default=0.01, type=float,
+                    help="Weight for pushing opacity gates toward 0 or 1.")
+    group.add_argument("--opacity_init_logit", default=3.0, type=float,
+                    help="Initial logit for opacity gates.")
+    group.add_argument("--opacity_temperature", default=1.0, type=float,
+                    help="Sigmoid temperature for opacity gates.")
+
     
    
  
