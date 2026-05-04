@@ -18,6 +18,8 @@ from transformers import AutoModelForImageSegmentation
 
 def main():
     args = generate_args()
+    if args.inference_num_paths > 0:
+    args.num_paths = args.inference_num_paths
     fixseed(args.seed)
     dist_util.setup_dist(args.device)
 
@@ -211,6 +213,36 @@ def main():
             refine_model_output_points= refine_model_output
             refine_model_output_points= sketch_utils.denormalize_points(refine_model_output_points, args.scaling_factor, args.canvas_width) #convert the normalized points back to the original range [224,224] 
             _, final_svg_content_list = sketch_utils.rander_image_from_points(refine_model_output_points,args.canvas_width, args.canvas_height, return_svg_content=True)
+
+            if args.opacity_optimize_num_paths > 0:
+                optimized_points_list = []
+                for image_file, points, target_features in zip(images_files, refine_model_output_points, image_features):
+                    optimized_points, keep_indices, alpha, losses = sketch_utils.optimize_stroke_opacity_to_image_features(
+                        points,
+                        target_image_features=target_features,
+                        features_model=features_model,
+                        target_num_paths=args.opacity_optimize_num_paths,
+                        canvas_width=args.canvas_width,
+                        canvas_height=args.canvas_height,
+                        steps=args.opacity_optimize_steps,
+                        lr=args.opacity_optimize_lr,
+                        count_weight=args.opacity_count_weight,
+                        binary_weight=args.opacity_binary_weight,
+                        init_logit=args.opacity_init_logit,
+                        temperature=args.opacity_temperature,
+                        progress=True,
+                    )
+                    removed_indices = sorted(set(range(points.shape[0])) - set(keep_indices))
+                    print(
+                        f"{image_file}: opacity selected strokes={keep_indices}, "
+                        f"removed={removed_indices}, "
+                        f"loss={losses['loss']:.6f}, clip_loss={losses['clip_loss']:.6f}, "
+                        f"alpha_sum={alpha.sum().item():.3f}"
+                    )
+                    optimized_points_list.append(optimized_points)
+
+                refine_model_output_points = torch.stack(optimized_points_list)
+
 
             if target_is_dict and args.save_final_sketch_in_dict:
                 # Save final SVG sketches in dicts
