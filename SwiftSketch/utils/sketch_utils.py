@@ -969,3 +969,109 @@ def extract_control_points_from_svg(svg_content):
 
 
 # ===================================================
+def render_paths_with_alpha(control_points, alpha, canvas_width, canvas_height):
+    """
+    Render one sketch while using a differentiable opacity gate per stroke.
+    control_points: [num_paths, 4, 2], denormalized points
+    alpha: [num_paths], values in [0, 1]
+    """
+    shapes = []
+    shape_groups = []
+    device = control_points.device
+    dtype = control_points.dtype
+    num_paths = control_points.shape[0]
+
+    for i in range(num_paths):
+        path = pydiffvg.Path(num_control_points=torch.tensor([2]),
+                        points=control_points[i],
+                        stroke_width=torch.tensor(1.0),
+                        is_closed=False)
+        shapes.append(path)
+
+        stroke_color = torch.cat([
+            torch.zeros(3, device=device, dtype=dtype),
+            alpha[i].reshape(1).to(device=device, dtype=dtype),
+        ])
+        shape_group = pydiffvg.ShapeGroup(shape_ids=torch.tensor([len(shapes) - 1]),
+                                        fill_color=None,
+                                        stroke_color=stroke_color)
+        shape_groups.append(shape_group)
+
+    scene_args = pydiffvg.RenderFunction.serialize_scene(canvas_width, canvas_height, shapes, shape_groups)
+    render = pydiffvg.RenderFunction.apply
+    img = render(canvas_width, canvas_height, 2, 2, 0, None, *scene_args)
+
+    opacity = img[:, :, 3:4]
+    white = torch.ones(img.shape[0], img.shape[1], 3, device=img.device, dtype=img.dtype)
+    rendered_image_final = opacity * img[:, :, :3] + white * (1 - opacity)
+    return rendered_image_final[:, :, :3]
+
+
+def optimize_stroke_opacity_to_image_features(
+    control_points,
+    target_image_features,
+    features_model,
+    target_num_paths,
+    canvas_width,
+    canvas_height,
+    steps=300,
+    lr=0.05,
+    count_weight=1.0,
+    binary_weight=0.01,
+    init_logit=3.0,
+    temperature=1.0,
+    progress=True,
+):
+    num_paths = control_points.shape[0]
+    assert 1 <= target_num_paths <= num_paths
+
+    device = control_points.device
+    if target_num_paths == num_paths:
+        alpha = torch.ones(num_paths, device=device)
+        losses = {"loss": 0.0, "clip_loss": 0.0, "count_loss": 0.0, "binary_loss": 0.0}
+        return control_points, list(range(num_paths)), alpha, losses
+
+    target = target_image_features.unsqueeze(0).to(device).float()
+    target = F.normalize(target.flatten(1), dim=1).detach()
+
+    logits = torch.full((num_paths,), init_logit, device=device, requires_grad=True)
+    optimizer = torch.optim.Adam([logits], lr=lr)
+    iterator = range(steps)
+    if progress:
+        iterator = tqdm(iterator, desc=f"opacity optimize {num_paths}->{target_num_paths}", unit="step")
+
+    last_losses = {}
+    for _ in iterator:
+        optimizer.zero_grad()
+
+        alpha = torch.sigmoid(logits / temperature)
+        sketch = render_paths_with_alpha(control_points, alpha, canvas_width, canvas_height)
+        sketch = sketch.unsqueeze(0).permute(0, 3, 1, 2)
+
+        sketch_features = features_model.get_clip_features_from_middle_layer(sketch).float()
+        sketch_features = F.normalize(sketch_features.flatten(1), dim=1)
+
+        clip_loss = 1.0 - (sketch_features * target).sum(dim=1).mean()
+        count_loss = ((alpha.sum() - target_num_paths) / num_paths) ** 2
+        binary_loss = (alpha * (1.0 - alpha)).mean()
+        loss = clip_loss + count_weight * count_loss + binary_weight * binary_loss
+
+        loss.backward()
+        optimizer.step()
+
+        last_losses = {
+            "loss": loss.item(),
+            "clip_loss": clip_loss.item(),
+            "count_loss": count_loss.item(),
+            "binary_loss": binary_loss.item(),
+        }
+        if progress:
+            iterator.set_postfix(
+                loss=f"{last_losses['loss']:.6f}",
+                clip=f"{last_losses['clip_loss']:.6f}",
+                alpha_sum=f"{alpha.sum().item():.2f}",
+            )
+
+    alpha = torch.sigmoid(logits / temperature).detach()
+    keep_indices = torch.topk(alpha, target_num_paths).indices.sort().values.tolist()
+    return control_points[keep_indices], keep_indices, alpha, last_losses
