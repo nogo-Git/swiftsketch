@@ -245,7 +245,7 @@ def main():
             _, final_svg_content_list = sketch_utils.rander_image_from_points(refine_model_output_points,args.canvas_width, args.canvas_height, return_svg_content=True)
 
             if args.annotate_clip_score:
-                clip_scores = sketch_utils.compute_clip_scores_from_points(
+                clip_scores, raw_clip_scores, blank_clip_scores = sketch_utils.compute_blank_adjusted_clip_scores_from_points(
                     refine_model_output_points,
                     image_features,
                     features_model,
@@ -255,14 +255,19 @@ def main():
                 final_svg_content_list = [
                     sketch_utils.add_svg_text(
                         svg_content,
-                        f"CLIP: {clip_score:.4f}",
+                        f"CLIPd: {clip_score:.4f}",
                         args.canvas_width,
                         args.canvas_height,
                     )
                     for svg_content, clip_score in zip(final_svg_content_list, clip_scores)
                 ]
-                for image_file, clip_score in zip(images_files, clip_scores):
-                    print(f"{image_file}: final CLIP score={clip_score:.6f}")
+                for image_file, clip_score, raw_clip_score, blank_clip_score in zip(
+                    images_files, clip_scores, raw_clip_scores, blank_clip_scores
+                ):
+                    print(
+                        f"{image_file}: final CLIP adjusted={clip_score:.6f}, "
+                        f"raw={raw_clip_score:.6f}, blank={blank_clip_score:.6f}"
+                    )
 
             if target_is_dict and args.save_final_sketch_in_dict:
                 # Save final SVG sketches in dicts
