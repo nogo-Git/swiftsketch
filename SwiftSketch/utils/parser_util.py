@@ -211,6 +211,8 @@ def add_generate_options(parser):
                        help="If 1 and the input is a dict, save the final SwiftSketch SVG into the input dict.")
     group.add_argument("--save_svg", default=1, type=int,
                        help="If 1, save the final SwiftSketch SVG results into the output_dir.")
+    group.add_argument("--annotate_clip_score", default=0, type=int,
+                       help="If 1, write the final CLIP feature score on each output SVG.")
     group.add_argument("--save_diffusion_sketch_in_dict", default=0, type=int,
                        help="If 1 and the input is a dict, save the diffusion process SVG into the input dict.")
     group.add_argument("--refine_model_path", default='',  type=str,

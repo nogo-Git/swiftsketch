@@ -19,6 +19,7 @@ import tempfile
 from scipy.ndimage import  binary_erosion, binary_dilation
 import re
 from tqdm import tqdm
+import html
 
 
 def fix_image_scale(im):
@@ -211,7 +212,37 @@ def rander_image_from_points(control_points_batch, canvas_width, canvas_height, 
     rendered_images_final = rendered_images_final[:, :, :, :3]
     return rendered_images_final, svg_content_list
 
+def compute_clip_scores_from_points(control_points_batch, target_image_features, features_model, canvas_width, canvas_height):
+    """
+    Compute cosine CLIP feature scores for rendered sketches against target image features.
+    Returns a Python list where higher is better.
+    """
+    device = control_points_batch.device
+    with torch.no_grad():
+        rendered_images, _ = rander_image_from_points(control_points_batch, canvas_width, canvas_height)
+        rendered_images = rendered_images.permute(0, 3, 1, 2)
+        sketch_features = features_model.get_clip_features_from_middle_layer(rendered_images).float()
+        sketch_features = F.normalize(sketch_features.flatten(1), dim=1)
 
+        target = target_image_features.to(device).float()
+        target = F.normalize(target.flatten(1), dim=1)
+        scores = (sketch_features * target).sum(dim=1)
+    return scores.detach().cpu().tolist()
+
+
+def add_svg_text(svg_content, text, canvas_width, canvas_height, font_size=10, margin=4):
+    """Add a small text label near the bottom-right corner of an SVG string."""
+    safe_text = html.escape(text)
+    x = canvas_width - margin
+    y = canvas_height - margin
+    text_element = (
+        f'<text x="{x}" y="{y}" text-anchor="end" '
+        f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size}" '
+        f'fill="black" stroke="white" stroke-width="2" paint-order="stroke">{safe_text}</text>\n'
+    )
+    if "</svg>" not in svg_content:
+        return svg_content + text_element
+    return re.sub(r"</svg>\s*$", text_element + "</svg>", svg_content)
 
 def save_svg_from_points(control_points, canvas_width, canvas_height, save_path):
     #control_points_batch shape (num_paths, 4,2 )
@@ -1023,6 +1054,9 @@ def optimize_stroke_opacity_to_image_features(
     temperature=1.0,
     progress=True,
 ):
+    control_points = control_points.detach()
+    target_image_features = target_image_features.detach()
+
     num_paths = control_points.shape[0]
     assert 1 <= target_num_paths <= num_paths
 
