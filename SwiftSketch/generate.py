@@ -216,6 +216,13 @@ def main():
             if args.opacity_optimize_num_paths > 0:
                 optimized_points_list = []
                 for image_file, points, target_features in zip(images_files, refine_model_output_points, image_features):
+                    progress_output_dir = None
+                    progress_prefix = "opacity"
+                    if args.opacity_save_progress:
+                        progress_root = args.opacity_progress_dir or os.path.join(output_path, "opacity_progress")
+                        progress_prefix = os.path.splitext(os.path.basename(image_file))[0]
+                        progress_output_dir = os.path.join(progress_root, progress_prefix)
+                    
                     optimized_points, keep_indices, alpha, losses = sketch_utils.optimize_stroke_opacity_to_image_features(
                         points,
                         target_image_features=target_features,
@@ -230,6 +237,9 @@ def main():
                         init_logit=args.opacity_init_logit,
                         temperature=args.opacity_temperature,
                         progress=True,
+                        progress_output_dir=progress_output_dir,
+                        progress_prefix=progress_prefix,
+                        progress_interval=args.opacity_progress_interval,
                     )
                     removed_indices = sorted(set(range(points.shape[0])) - set(keep_indices))
                     print(

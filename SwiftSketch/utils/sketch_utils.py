@@ -1087,6 +1087,9 @@ def optimize_stroke_opacity_to_image_features(
     init_logit=3.0,
     temperature=1.0,
     progress=True,
+    progress_output_dir=None,
+    progress_prefix="opacity",
+    progress_interval=25,
 ):
     control_points = control_points.detach()
     target_image_features = target_image_features.detach()
@@ -1105,17 +1108,20 @@ def optimize_stroke_opacity_to_image_features(
 
     logits = torch.full((num_paths,), init_logit, device=device, requires_grad=True)
     optimizer = torch.optim.Adam([logits], lr=lr)
+    if progress_output_dir:
+        os.makedirs(progress_output_dir, exist_ok=True)
+    
     iterator = range(steps)
     if progress:
         iterator = tqdm(iterator, desc=f"opacity optimize {num_paths}->{target_num_paths}", unit="step")
 
     last_losses = {}
-    for _ in iterator:
+    for step_idx in iterator:
         optimizer.zero_grad()
 
         alpha = torch.sigmoid(logits / temperature)
-        sketch = render_paths_with_alpha(control_points, alpha, canvas_width, canvas_height)
-        sketch = sketch.unsqueeze(0).permute(0, 3, 1, 2)
+        sketch_image = render_paths_with_alpha(control_points, alpha, canvas_width, canvas_height)
+        sketch = sketch_image.unsqueeze(0).permute(0, 3, 1, 2)
 
         sketch_features = features_model.get_clip_features_from_middle_layer(sketch).float()
         sketch_features = F.normalize(sketch_features.flatten(1), dim=1)
@@ -1140,7 +1146,26 @@ def optimize_stroke_opacity_to_image_features(
                 clip=f"{last_losses['clip_loss']:.6f}",
                 alpha_sum=f"{alpha.sum().item():.2f}",
             )
+        if progress_output_dir and (
+            step_idx == 0
+            or (step_idx + 1) % max(1, progress_interval) == 0
+            or step_idx == steps - 1
+        ):
+            save_path = os.path.join(progress_output_dir, f"{progress_prefix}_step{step_idx + 1:04d}.png")
+            save_tensor_rgb_image(sketch_image, save_path)
 
     alpha = torch.sigmoid(logits / temperature).detach()
+    if progress_output_dir:
+        final_image = render_paths_with_alpha(control_points, alpha, canvas_width, canvas_height)
+        save_path = os.path.join(progress_output_dir, f"{progress_prefix}_final.png")
+        save_tensor_rgb_image(final_image, save_path)
+
+    
     keep_indices = torch.topk(alpha, target_num_paths).indices.sort().values.tolist()
     return control_points[keep_indices], keep_indices, alpha, last_losses
+
+
+def save_tensor_rgb_image(image, save_path):
+    image_np = image.detach().clamp(0, 1).cpu().numpy()
+    image_pil = Image.fromarray((image_np * 255).astype(np.uint8), "RGB")
+    image_pil.save(save_path)

@@ -226,6 +226,12 @@ def add_generate_options(parser):
                     help="Initial logit for opacity gates.")
     group.add_argument("--opacity_temperature", default=1.0, type=float,
                     help="Sigmoid temperature for opacity gates.")
+    group.add_argument("--opacity_save_progress", default=0, type=int,
+                    help="If 1, save intermediate opacity optimization images.")
+    group.add_argument("--opacity_progress_interval", default=25, type=int,
+                    help="Save one intermediate opacity optimization image every N steps.")
+    group.add_argument("--opacity_progress_dir", default="", type=str,
+                    help="Directory for intermediate opacity images. If empty, uses output_dir/opacity_progress.")
     
     
  
