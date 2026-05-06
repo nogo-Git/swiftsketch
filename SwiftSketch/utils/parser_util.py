@@ -239,6 +239,8 @@ def add_generate_options(parser):
                     help="Save one intermediate opacity optimization image every N steps.")
     group.add_argument("--opacity_progress_dir", default="", type=str,
                     help="Directory for intermediate opacity images. If empty, uses output_dir/opacity_progress.")
+    group.add_argument("--save_masked_input", default=0, type=int,
+                    help="If 1, save the background-removed input images used for feature extraction.")
 
 
 def get_cond_mode(args):

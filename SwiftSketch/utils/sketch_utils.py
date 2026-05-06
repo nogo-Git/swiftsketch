@@ -1103,8 +1103,15 @@ def optimize_stroke_opacity_to_image_features(
         losses = {"loss": 0.0, "clip_loss": 0.0, "count_loss": 0.0, "binary_loss": 0.0}
         return control_points, list(range(num_paths)), alpha, losses
 
-    target = target_image_features.unsqueeze(0).to(device).float()
-    target = F.normalize(target.flatten(1), dim=1).detach()
+    # target = target_image_features.unsqueeze(0).to(device).float()
+    # target = F.normalize(target.flatten(1), dim=1).detach()
+
+    target = target_image_features.unsqueeze(0).to(device).float().flatten(1)
+    with torch.no_grad():
+        blank_image = torch.ones(1, 3, canvas_height, canvas_width, device=device)
+        blank_features = features_model.get_clip_features_from_middle_layer(blank_image).float().flatten(1)
+    target = F.normalize(target - blank_features, dim=1).detach()
+    blank_features = blank_features.detach()
 
     logits = torch.full((num_paths,), init_logit, device=device, requires_grad=True)
     optimizer = torch.optim.Adam([logits], lr=lr)
@@ -1124,7 +1131,8 @@ def optimize_stroke_opacity_to_image_features(
         sketch = sketch_image.unsqueeze(0).permute(0, 3, 1, 2)
 
         sketch_features = features_model.get_clip_features_from_middle_layer(sketch).float()
-        sketch_features = F.normalize(sketch_features.flatten(1), dim=1)
+        # sketch_features = F.normalize(sketch_features.flatten(1), dim=1)
+        sketch_features = F.normalize(sketch_features.flatten(1) - blank_features, dim=1)
 
         clip_loss = 1.0 - (sketch_features * target).sum(dim=1).mean()
         count_loss = ((alpha.sum() - target_num_paths) / num_paths) ** 2

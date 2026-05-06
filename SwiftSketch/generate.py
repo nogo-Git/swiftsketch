@@ -131,7 +131,13 @@ def main():
                                 mask= sketch_utils.get_mask(input_image, args.device, mask_model)
                             input_image= sketch_utils.create_masked_image(input_image, mask)
                             if args.fix_scale:
-                                input_image=sketch_utils.fix_image_scale(input_image)    
+                                input_image=sketch_utils.fix_image_scale(input_image)  
+                            if args.save_masked_input:
+                                masked_dir = os.path.join(output_path, "masked_inputs")
+                                os.makedirs(masked_dir, exist_ok=True)
+                                base_name = os.path.splitext(f_)[0]
+                                input_image.save(os.path.join(masked_dir, f"{base_name}_masked.png"))
+                            image_features = features_model(input_image).to(args.device)
                             image_features = features_model(input_image).to(args.device)
                         image_features_lst.append(image_features)
                     except Exception as e:
@@ -151,7 +157,12 @@ def main():
                         mask= sketch_utils.get_mask(input_image, args.device, mask_model)
                         input_image= sketch_utils.create_masked_image(input_image, mask)
                         if args.fix_scale:
-                            input_image=sketch_utils.fix_image_scale(input_image)    
+                            input_image=sketch_utils.fix_image_scale(input_image)
+                        if args.save_masked_input:
+                            masked_dir = os.path.join(output_path, "masked_inputs")
+                            os.makedirs(masked_dir, exist_ok=True)
+                            base_name = os.path.splitext(f_)[0]
+                            input_image.save(os.path.join(masked_dir, f"{base_name}_masked.png"))    
                         image_features = features_model(input_image).to(args.device)
                         image_features_lst.append(image_features)
                     except Exception as e:
