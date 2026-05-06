@@ -21,6 +21,7 @@ import re
 
 from itertools import combinations, islice
 import math
+import html
 from tqdm import tqdm
 
 def fix_image_scale(im):
@@ -1045,3 +1046,71 @@ def brute_force_reduce_strokes_to_image_features(
     pbar.close()
                 
     return control_points[best_indices], best_indices, best_loss
+
+def compute_clip_scores_from_points(control_points_batch, target_image_features, features_model, canvas_width, canvas_height):
+    """
+    Compute cosine CLIP feature scores for rendered sketches against target image features.
+    Returns a Python list where higher is better.
+    """
+    device = control_points_batch.device
+    with torch.no_grad():
+        rendered_images, _ = rander_image_from_points(control_points_batch, canvas_width, canvas_height)
+        rendered_images = rendered_images.permute(0, 3, 1, 2)
+        sketch_features = features_model.get_clip_features_from_middle_layer(rendered_images).float()
+        sketch_features = F.normalize(sketch_features.flatten(1), dim=1)
+
+        target = target_image_features.to(device).float()
+        target = F.normalize(target.flatten(1), dim=1)
+        scores = (sketch_features * target).sum(dim=1)
+    return scores.detach().cpu().tolist()
+
+
+def compute_blank_adjusted_clip_scores_from_points(
+    control_points_batch,
+    target_image_features,
+    features_model,
+    canvas_width,
+    canvas_height,
+):
+    """
+    Compute CLIP score improvements over a blank white canvas.
+    Returns three Python lists: adjusted scores, raw sketch scores, and blank scores.
+    """
+    device = control_points_batch.device
+    with torch.no_grad():
+        rendered_images, _ = rander_image_from_points(control_points_batch, canvas_width, canvas_height)
+        rendered_images = rendered_images.permute(0, 3, 1, 2)
+        sketch_features = features_model.get_clip_features_from_middle_layer(rendered_images).float()
+        sketch_features = F.normalize(sketch_features.flatten(1), dim=1)
+
+        blank_images = torch.ones_like(rendered_images)
+        blank_features = features_model.get_clip_features_from_middle_layer(blank_images).float()
+        blank_features = F.normalize(blank_features.flatten(1), dim=1)
+
+        target = target_image_features.to(device).float()
+        target = F.normalize(target.flatten(1), dim=1)
+
+        raw_scores = (sketch_features * target).sum(dim=1)
+        blank_scores = (blank_features * target).sum(dim=1)
+        adjusted_scores = raw_scores - blank_scores
+
+    return (
+        adjusted_scores.detach().cpu().tolist(),
+        raw_scores.detach().cpu().tolist(),
+        blank_scores.detach().cpu().tolist(),
+    )
+
+
+def add_svg_text(svg_content, text, canvas_width, canvas_height, font_size=10, margin=4):
+    """Add a small text label near the bottom-right corner of an SVG string."""
+    safe_text = html.escape(text)
+    x = canvas_width - margin
+    y = canvas_height - margin
+    text_element = (
+        f'<text x="{x}" y="{y}" text-anchor="end" '
+        f'font-family="Arial, Helvetica, sans-serif" font-size="{font_size}" '
+        f'fill="black" stroke="white" stroke-width="2" paint-order="stroke">{safe_text}</text>\n'
+    )
+    if "</svg>" not in svg_content:
+        return svg_content + text_element
+    return re.sub(r"</svg>\s*$", text_element + "</svg>", svg_content)

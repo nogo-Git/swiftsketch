@@ -221,6 +221,8 @@ def add_generate_options(parser):
                    help="Number of stroke combinations evaluated at once.")
     group.add_argument("--topk_num_paths", default=0, type=int,
                    help="If > 0, keep only the first K generated strokes.")
+    group.add_argument("--annotate_clip_score", default=0, type=int,
+                       help="If 1, write the final CLIP feature score on each output SVG.")
 
 
     
