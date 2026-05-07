@@ -18,7 +18,7 @@ from transformers import AutoModelForImageSegmentation
 
 def main():
     args = generate_args()
-    args.num_paths = 20
+    args.num_paths = 24
     
     fixseed(args.seed)
     dist_util.setup_dist(args.device)
