@@ -1136,7 +1136,15 @@ def optimize_stroke_opacity_to_image_features(
 
         clip_loss = 1.0 - (sketch_features * target).sum(dim=1).mean()
         count_loss = ((alpha.sum() - target_num_paths) / num_paths) ** 2
-        binary_loss = (alpha * (1.0 - alpha)).mean()
+        
+        eps = torch.finfo(alpha.dtype).eps
+        alpha_safe = alpha.clamp(eps, 1.0 - eps)
+
+        binary_loss = -(
+            alpha_safe * torch.log(alpha_safe)
+            + (1.0 - alpha_safe) * torch.log(1.0 - alpha_safe)
+        ).mean()
+
         loss = clip_loss + count_weight * count_loss + binary_weight * binary_loss
 
         loss.backward()
