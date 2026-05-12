@@ -1090,6 +1090,10 @@ def optimize_stroke_opacity_to_image_features(
     progress_output_dir=None,
     progress_prefix="opacity",
     progress_interval=25,
+    min_steps=50,
+    patience=30,
+    min_delta=1e-5,
+
 ):
     control_points = control_points.detach()
     target_image_features = target_image_features.detach()
@@ -1122,6 +1126,9 @@ def optimize_stroke_opacity_to_image_features(
     if progress:
         iterator = tqdm(iterator, desc=f"opacity optimize {num_paths}->{target_num_paths}", unit="step")
 
+    best_loss = float("inf")
+    best_logits = None
+    stale_steps = 0
     last_losses = {}
     for step_idx in iterator:
         optimizer.zero_grad()
@@ -1149,6 +1156,8 @@ def optimize_stroke_opacity_to_image_features(
 
         loss.backward()
         optimizer.step()
+        
+        current_loss = loss.item()
 
         last_losses = {
             "loss": loss.item(),
@@ -1156,12 +1165,31 @@ def optimize_stroke_opacity_to_image_features(
             "count_loss": count_loss.item(),
             "binary_loss": binary_loss.item(),
         }
+        
+        if current_loss < best_loss - min_delta:
+            best_loss = current_loss
+            best_logits = logits.detach().clone()
+            stale_steps = 0
+        else:
+            stale_steps += 1
+            
         if progress:
             iterator.set_postfix(
                 loss=f"{last_losses['loss']:.6f}",
                 clip=f"{last_losses['clip_loss']:.6f}",
                 alpha_sum=f"{alpha.sum().item():.2f}",
             )
+
+        if step_idx + 1 >= min_steps and stale_steps >= patience:
+            if progress:
+                iterator.set_postfix(
+                    loss=f"{current_loss:.6f}",
+                    clip=f"{clip_loss.item():.6f}",
+                    alpha_sum=f"{alpha.sum().item():.2f}",
+                    stop="early",
+                )
+            break
+        
         if progress_output_dir and (
             step_idx == 0
             or (step_idx + 1) % max(1, progress_interval) == 0
@@ -1170,7 +1198,13 @@ def optimize_stroke_opacity_to_image_features(
             save_path = os.path.join(progress_output_dir, f"{progress_prefix}_step{step_idx + 1:04d}.png")
             save_tensor_rgb_image(sketch_image, save_path)
 
-    alpha = torch.sigmoid(logits / temperature).detach()
+    if best_logits is not None:
+        logits_final = best_logits
+    else:
+        logits_final = logits.detach()
+
+    alpha = torch.sigmoid(logits_final / temperature).detach()
+
     if progress_output_dir:
         final_image = render_paths_with_alpha(control_points, alpha, canvas_width, canvas_height)
         save_path = os.path.join(progress_output_dir, f"{progress_prefix}_final.png")
