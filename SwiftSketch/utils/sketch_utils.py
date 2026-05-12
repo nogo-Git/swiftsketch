@@ -1073,6 +1073,53 @@ def render_paths_with_alpha(control_points, alpha, canvas_width, canvas_height):
     return rendered_image_final[:, :, :3]
 
 
+def compute_stroke_overlap_matrix(
+    control_points,
+    canvas_width,
+    canvas_height,
+    overlap_threshold=0.2,
+):
+    """
+    Precompute pairwise stroke redundancy from alpha masks.
+    Returns [num_paths, num_paths], where larger values mean two strokes mostly cover
+    the same pixels. The diagonal is zero.
+    """
+    device = control_points.device
+    dtype = control_points.dtype
+    masks = []
+
+    with torch.no_grad():
+        for i in range(control_points.shape[0]):
+            path = pydiffvg.Path(
+                num_control_points=torch.tensor([2]),
+                points=control_points[i],
+                stroke_width=torch.tensor(1.0),
+                is_closed=False,
+            )
+            shape_group = pydiffvg.ShapeGroup(
+                shape_ids=torch.tensor([0]),
+                fill_color=None,
+                stroke_color=torch.tensor([0.0, 0.0, 0.0, 1.0], device=device, dtype=dtype),
+            )
+            scene_args = pydiffvg.RenderFunction.serialize_scene(
+                canvas_width, canvas_height, [path], [shape_group]
+            )
+            img = pydiffvg.RenderFunction.apply(
+                canvas_width, canvas_height, 2, 2, 0, None, *scene_args
+            )
+            masks.append(img[:, :, 3].clamp(0, 1).reshape(-1))
+
+        masks = torch.stack(masks).to(device=device, dtype=torch.float32)
+        areas = masks.sum(dim=1)
+        overlap_pixels = masks @ masks.t()
+        min_areas = torch.minimum(areas[:, None], areas[None, :]).clamp_min(1e-6)
+        overlap_ratio = overlap_pixels / min_areas
+        overlap_matrix = F.relu(overlap_ratio - overlap_threshold)
+        overlap_matrix.fill_diagonal_(0.0)
+
+    return overlap_matrix
+
+
 def optimize_stroke_opacity_to_image_features(
     control_points,
     target_image_features,
@@ -1086,6 +1133,8 @@ def optimize_stroke_opacity_to_image_features(
     binary_weight=0.01,
     init_logit=3.0,
     temperature=1.0,
+    overlap_weight=0.0,
+    overlap_threshold=0.2,
     progress=True,
     progress_output_dir=None,
     progress_prefix="opacity",
@@ -1104,7 +1153,13 @@ def optimize_stroke_opacity_to_image_features(
     device = control_points.device
     if target_num_paths == num_paths:
         alpha = torch.ones(num_paths, device=device)
-        losses = {"loss": 0.0, "clip_loss": 0.0, "count_loss": 0.0, "binary_loss": 0.0}
+        losses = {
+            "loss": 0.0,
+            "clip_loss": 0.0,
+            "count_loss": 0.0,
+            "binary_loss": 0.0,
+            "overlap_loss": 0.0,
+        }
         return control_points, list(range(num_paths)), alpha, losses
 
     # target = target_image_features.unsqueeze(0).to(device).float()
@@ -1116,6 +1171,16 @@ def optimize_stroke_opacity_to_image_features(
         blank_features = features_model.get_clip_features_from_middle_layer(blank_image).float().flatten(1)
     target = F.normalize(target - blank_features, dim=1).detach()
     blank_features = blank_features.detach()
+
+    if overlap_weight > 0:
+        overlap_matrix = compute_stroke_overlap_matrix(
+            control_points,
+            canvas_width,
+            canvas_height,
+            overlap_threshold=overlap_threshold,
+        )
+    else:
+        overlap_matrix = None
 
     logits = torch.full((num_paths,), init_logit, device=device, requires_grad=True)
     optimizer = torch.optim.Adam([logits], lr=lr)
@@ -1152,7 +1217,19 @@ def optimize_stroke_opacity_to_image_features(
             + (1.0 - alpha_safe) * torch.log(1.0 - alpha_safe)
         ).mean()
 
-        loss = clip_loss + count_weight * count_loss + binary_weight * binary_loss
+        if overlap_matrix is not None:
+            pair_alpha = alpha[:, None] * alpha[None, :]
+            pair_count = max(target_num_paths * (target_num_paths - 1), 1)
+            overlap_loss = (pair_alpha * overlap_matrix).sum() / pair_count
+        else:
+            overlap_loss = alpha.new_tensor(0.0)
+
+        loss = (
+            clip_loss
+            + count_weight * count_loss
+            + binary_weight * binary_loss
+            + overlap_weight * overlap_loss
+        )
 
         loss.backward()
         optimizer.step()
@@ -1164,6 +1241,7 @@ def optimize_stroke_opacity_to_image_features(
             "clip_loss": clip_loss.item(),
             "count_loss": count_loss.item(),
             "binary_loss": binary_loss.item(),
+            "overlap_loss": overlap_loss.item(),
         }
         
         if current_loss < best_loss - min_delta:
@@ -1177,6 +1255,7 @@ def optimize_stroke_opacity_to_image_features(
             iterator.set_postfix(
                 loss=f"{last_losses['loss']:.6f}",
                 clip=f"{last_losses['clip_loss']:.6f}",
+                overlap=f"{last_losses['overlap_loss']:.6f}",
                 alpha_sum=f"{alpha.sum().item():.2f}",
             )
 
@@ -1185,6 +1264,7 @@ def optimize_stroke_opacity_to_image_features(
                 iterator.set_postfix(
                     loss=f"{current_loss:.6f}",
                     clip=f"{clip_loss.item():.6f}",
+                    overlap=f"{overlap_loss.item():.6f}",
                     alpha_sum=f"{alpha.sum().item():.2f}",
                     stop="early",
                 )

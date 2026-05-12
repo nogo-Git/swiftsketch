@@ -222,6 +222,10 @@ def add_generate_options(parser):
                     help="Weight for matching the sum of opacity gates to the target stroke count.")
     group.add_argument("--opacity_binary_weight", default=0.01, type=float,
                     help="Weight for pushing opacity gates toward 0 or 1.")
+    group.add_argument("--opacity_overlap_weight", default=0.0, type=float,
+                    help="Weight for penalizing selected strokes with redundant pixel overlap.")
+    group.add_argument("--opacity_overlap_threshold", default=0.2, type=float,
+                    help="Ignore pairwise stroke overlap ratios below this threshold.")
     group.add_argument("--opacity_init_logit", default=3.0, type=float,
                     help="Initial logit for opacity gates.")
     group.add_argument("--opacity_temperature", default=1.0, type=float,
@@ -271,7 +275,6 @@ def generate_args():
     args = parse_and_load_from_model(parser)
 
     return args
-
 
 
 

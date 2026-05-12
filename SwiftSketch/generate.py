@@ -247,6 +247,8 @@ def main():
                         binary_weight=args.opacity_binary_weight,
                         init_logit=args.opacity_init_logit,
                         temperature=args.opacity_temperature,
+                        overlap_weight=args.opacity_overlap_weight,
+                        overlap_threshold=args.opacity_overlap_threshold,
                         progress=True,
                         progress_output_dir=progress_output_dir,
                         progress_prefix=progress_prefix,
@@ -257,6 +259,7 @@ def main():
                         f"{image_file}: opacity selected strokes={keep_indices}, "
                         f"removed={removed_indices}, "
                         f"loss={losses['loss']:.6f}, clip_loss={losses['clip_loss']:.6f}, "
+                        f"overlap_loss={losses['overlap_loss']:.6f}, "
                         f"alpha_sum={alpha.sum().item():.3f}"
                     )
                     optimized_points_list.append(optimized_points)
@@ -320,5 +323,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
