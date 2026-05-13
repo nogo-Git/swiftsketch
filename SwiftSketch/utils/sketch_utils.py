@@ -229,6 +229,44 @@ def compute_clip_scores_from_points(control_points_batch, target_image_features,
         scores = (sketch_features * target).sum(dim=1)
     return scores.detach().cpu().tolist()
 
+def _as_batched_target_features(target_image_features, batch_size, device):
+    target = target_image_features.to(device).float()
+    if target.dim() == 1 or target.shape[0] != batch_size:
+        target = target.unsqueeze(0)
+    return target
+
+def compute_blank_adjusted_clip_scores_from_images(
+    rendered_images,
+    target_image_features,
+    features_model,
+    blank_features=None,
+):
+    """
+    Compute CLIP score improvements over a blank white canvas from rendered RGB images.
+    rendered_images must be [B, 3, H, W]. Returns tensors on the input device:
+    adjusted scores, raw sketch scores, and blank scores.
+    """
+    batch_size = rendered_images.shape[0]
+    device = rendered_images.device
+
+    sketch_features = features_model.get_clip_features_from_middle_layer(rendered_images).float()
+    sketch_features = F.normalize(sketch_features.flatten(1), dim=1)
+
+    if blank_features is None:
+        blank_images = torch.ones_like(rendered_images)
+        blank_features = features_model.get_clip_features_from_middle_layer(blank_images).float()
+    else:
+        blank_features = blank_features.to(device).float()
+    blank_features = F.normalize(blank_features.flatten(1), dim=1)
+
+    target = _as_batched_target_features(target_image_features, batch_size, device)
+    target = F.normalize(target.flatten(1), dim=1)
+
+    raw_scores = (sketch_features * target).sum(dim=1)
+    blank_scores = (blank_features * target).sum(dim=1)
+    adjusted_scores = raw_scores - blank_scores
+    return adjusted_scores, raw_scores, blank_scores
+
 def compute_blank_adjusted_clip_scores_from_points(
     control_points_batch,
     target_image_features,
@@ -240,23 +278,14 @@ def compute_blank_adjusted_clip_scores_from_points(
     Compute CLIP score improvements over a blank white canvas.
     Returns three Python lists: adjusted scores, raw sketch scores, and blank scores.
     """
-    device = control_points_batch.device
     with torch.no_grad():
         rendered_images, _ = rander_image_from_points(control_points_batch, canvas_width, canvas_height)
         rendered_images = rendered_images.permute(0, 3, 1, 2)
-        sketch_features = features_model.get_clip_features_from_middle_layer(rendered_images).float()
-        sketch_features = F.normalize(sketch_features.flatten(1), dim=1)
-
-        blank_images = torch.ones_like(rendered_images)
-        blank_features = features_model.get_clip_features_from_middle_layer(blank_images).float()
-        blank_features = F.normalize(blank_features.flatten(1), dim=1)
-
-        target = target_image_features.to(device).float()
-        target = F.normalize(target.flatten(1), dim=1)
-
-        raw_scores = (sketch_features * target).sum(dim=1)
-        blank_scores = (blank_features * target).sum(dim=1)
-        adjusted_scores = raw_scores - blank_scores
+        adjusted_scores, raw_scores, blank_scores = compute_blank_adjusted_clip_scores_from_images(
+            rendered_images,
+            target_image_features,
+            features_model,
+        )
 
     return (
         adjusted_scores.detach().cpu().tolist(),
@@ -1162,15 +1191,11 @@ def optimize_stroke_opacity_to_image_features(
         }
         return control_points, list(range(num_paths)), alpha, losses
 
-    # target = target_image_features.unsqueeze(0).to(device).float()
-    # target = F.normalize(target.flatten(1), dim=1).detach()
-
-    target = target_image_features.unsqueeze(0).to(device).float().flatten(1)
     with torch.no_grad():
         blank_image = torch.ones(1, 3, canvas_height, canvas_width, device=device)
-        blank_features = features_model.get_clip_features_from_middle_layer(blank_image).float().flatten(1)
-    target = F.normalize(target - blank_features, dim=1).detach()
+        blank_features = features_model.get_clip_features_from_middle_layer(blank_image).float()
     blank_features = blank_features.detach()
+    target_image_features = target_image_features.detach()
 
     if overlap_weight > 0:
         overlap_matrix = compute_stroke_overlap_matrix(
@@ -1202,11 +1227,13 @@ def optimize_stroke_opacity_to_image_features(
         sketch_image = render_paths_with_alpha(control_points, alpha, canvas_width, canvas_height)
         sketch = sketch_image.unsqueeze(0).permute(0, 3, 1, 2)
 
-        sketch_features = features_model.get_clip_features_from_middle_layer(sketch).float()
-        # sketch_features = F.normalize(sketch_features.flatten(1), dim=1)
-        sketch_features = F.normalize(sketch_features.flatten(1) - blank_features, dim=1)
-
-        clip_loss = 1.0 - (sketch_features * target).sum(dim=1).mean()
+        adjusted_scores, _, _ = compute_blank_adjusted_clip_scores_from_images(
+            sketch,
+            target_image_features,
+            features_model,
+            blank_features=blank_features,
+        )
+        clip_loss = 1.0 - adjusted_scores.mean()
         count_loss = ((alpha.sum() - target_num_paths) / num_paths) ** 2
         
         eps = torch.finfo(alpha.dtype).eps
