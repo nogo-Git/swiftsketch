@@ -1,7 +1,7 @@
 
 import torch
 import pydiffvg
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import os
 import numpy as np
 from svgpathtools import CubicBezier
@@ -1281,8 +1281,10 @@ def optimize_stroke_opacity_to_image_features(
         if progress:
             iterator.set_postfix(
                 loss=f"{last_losses['loss']:.6f}",
-                clip=f"{last_losses['clip_loss']:.6f}",
-                overlap=f"{last_losses['overlap_loss']:.6f}",
+                clip=f"{last_losses['clip_loss']:.4f}",
+                count=f"{last_losses['count_loss']:.4f}",
+                binary=f"{last_losses['binary_loss']:.4f}",
+                overlap=f"{last_losses['overlap_loss']:.4f}",
                 alpha_sum=f"{alpha.sum().item():.2f}",
             )
 
@@ -1290,8 +1292,10 @@ def optimize_stroke_opacity_to_image_features(
             if progress:
                 iterator.set_postfix(
                     loss=f"{current_loss:.6f}",
-                    clip=f"{clip_loss.item():.6f}",
-                    overlap=f"{overlap_loss.item():.6f}",
+                    clip=f"{clip_loss.item():.4f}",
+                    count=f"{count_loss.item():.4f}",
+                    binary=f"{binary_loss.item():.4f}",
+                    overlap=f"{overlap_loss.item():.4f}",
                     alpha_sum=f"{alpha.sum().item():.2f}",
                     stop="early",
                 )
@@ -1322,7 +1326,29 @@ def optimize_stroke_opacity_to_image_features(
     return control_points[keep_indices], keep_indices, alpha, last_losses
 
 
-def save_tensor_rgb_image(image, save_path):
+def save_tensor_rgb_image(image, save_path, text=None, font_size=10, margin=4):
     image_np = image.detach().clamp(0, 1).cpu().numpy()
     image_pil = Image.fromarray((image_np * 255).astype(np.uint8), "RGB")
+    if text is not None:
+        draw = ImageDraw.Draw(image_pil)
+        try:
+            font = ImageFont.truetype("DejaVuSans.ttf", font_size)
+        except OSError:
+            font = ImageFont.load_default()
+        if hasattr(draw, "textbbox"):
+            text_bbox = draw.textbbox((0, 0), text, font=font, stroke_width=2)
+            text_width = text_bbox[2] - text_bbox[0]
+            text_height = text_bbox[3] - text_bbox[1]
+        else:
+            text_width, text_height = draw.textsize(text, font=font)
+        x = image_pil.width - margin - text_width
+        y = image_pil.height - margin - text_height
+        draw.text(
+            (x, y),
+            text,
+            fill="black",
+            font=font,
+            stroke_width=2,
+            stroke_fill="white",
+        )
     image_pil.save(save_path)

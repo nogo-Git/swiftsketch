@@ -255,12 +255,37 @@ def main():
                         progress_interval=args.opacity_progress_interval,
                     )
                     removed_indices = sorted(set(range(points.shape[0])) - set(keep_indices))
+                    with torch.no_grad():
+                        soft_image = sketch_utils.render_paths_with_alpha(
+                            points.detach(),
+                            alpha,
+                            args.canvas_width,
+                            args.canvas_height,
+                        )
+                        soft_image_batch = soft_image.unsqueeze(0).permute(0, 3, 1, 2)
+                        soft_scores, soft_raw_scores, soft_blank_scores = sketch_utils.compute_blank_adjusted_clip_scores_from_images(
+                            soft_image_batch,
+                            target_features,
+                            features_model,
+                        )
+                    soft_score = soft_scores.item()
+                    soft_raw_score = soft_raw_scores.item()
+                    soft_blank_score = soft_blank_scores.item()
+                    base_name = os.path.splitext(os.path.basename(image_file))[0]
+                    soft_output_path = os.path.join(output_path, f"{base_name}_opacity_soft.png")
+                    sketch_utils.save_tensor_rgb_image(
+                        soft_image,
+                        soft_output_path,
+                        text=f"CLIPd: {soft_score:.4f}",
+                    )
                     print(
                         f"{image_file}: opacity selected strokes={keep_indices}, "
                         f"removed={removed_indices}, "
                         f"loss={losses['loss']:.6f}, clip_loss={losses['clip_loss']:.6f}, "
                         f"overlap_loss={losses['overlap_loss']:.6f}, "
-                        f"alpha_sum={alpha.sum().item():.3f}"
+                        f"alpha_sum={alpha.sum().item():.3f}, "
+                        f"soft_clip_adjusted={soft_score:.6f}, "
+                        f"soft_raw={soft_raw_score:.6f}, soft_blank={soft_blank_score:.6f}"
                     )
                     optimized_points_list.append(optimized_points)
 
@@ -323,4 +348,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
