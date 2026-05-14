@@ -1102,6 +1102,20 @@ def render_paths_with_alpha(control_points, alpha, canvas_width, canvas_height):
     return rendered_image_final[:, :, :3]
 
 
+def make_topk_opacity_gate(alpha, target_num_paths, straight_through=True):
+    keep_indices = torch.topk(alpha, target_num_paths).indices
+
+    hard_gate = torch.zeros_like(alpha)
+    hard_gate.scatter_(0, keep_indices, 1.0)
+
+    if straight_through:
+        # forward: hard 0/1 top-k
+        # backward: alpha に勾配を流す
+        return hard_gate.detach() - alpha.detach() + alpha
+
+    return hard_gate
+
+
 def compute_stroke_overlap_matrix(
     control_points,
     canvas_width,
@@ -1224,7 +1238,9 @@ def optimize_stroke_opacity_to_image_features(
         optimizer.zero_grad()
 
         alpha = torch.sigmoid(logits / temperature)
-        sketch_image = render_paths_with_alpha(control_points, alpha, canvas_width, canvas_height)
+        gate = make_topk_opacity_gate(alpha, target_num_paths, straight_through=True)
+        sketch_image = render_paths_with_alpha(control_points, gate, canvas_width, canvas_height)
+
         sketch = sketch_image.unsqueeze(0).permute(0, 3, 1, 2)
 
         adjusted_scores, _, _ = compute_blank_adjusted_clip_scores_from_images(
@@ -1245,7 +1261,7 @@ def optimize_stroke_opacity_to_image_features(
         ).mean()
 
         if overlap_matrix is not None:
-            pair_alpha = alpha[:, None] * alpha[None, :]
+            pair_alpha = gate[:, None] * gate[None, :]
             pair_count = max(target_num_paths * (target_num_paths - 1), 1)
             overlap_loss = (pair_alpha * overlap_matrix).sum() / pair_count
         else:
@@ -1317,7 +1333,8 @@ def optimize_stroke_opacity_to_image_features(
     alpha = torch.sigmoid(logits_final / temperature).detach()
 
     if progress_output_dir:
-        final_image = render_paths_with_alpha(control_points, alpha, canvas_width, canvas_height)
+        final_gate = make_topk_opacity_gate(alpha, target_num_paths, straight_through=False)
+        final_image = render_paths_with_alpha(control_points, final_gate, canvas_width, canvas_height)
         save_path = os.path.join(progress_output_dir, f"{progress_prefix}_final.png")
         save_tensor_rgb_image(final_image, save_path)
 
