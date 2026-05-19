@@ -249,6 +249,11 @@ def main():
                         temperature=args.opacity_temperature,
                         overlap_weight=args.opacity_overlap_weight,
                         overlap_threshold=args.opacity_overlap_threshold,
+                        similarity_weight=args.opacity_similarity_weight,
+                        similarity_distance_threshold=args.opacity_similarity_distance_threshold,
+                        similarity_tangent_threshold=args.opacity_similarity_tangent_threshold,
+                        similarity_length_threshold=args.opacity_similarity_length_threshold,
+                        similarity_num_samples=args.opacity_similarity_num_samples,
                         progress=True,
                         progress_output_dir=progress_output_dir,
                         progress_prefix=progress_prefix,
@@ -283,6 +288,7 @@ def main():
                         f"removed={removed_indices}, "
                         f"loss={losses['loss']:.6f}, clip_loss={losses['clip_loss']:.6f}, "
                         f"overlap_loss={losses['overlap_loss']:.6f}, "
+                        f"similarity_loss={losses['similarity_loss']:.6f}, "
                         f"alpha_sum={alpha.sum().item():.3f}, "
                         f"soft_clip_adjusted={soft_score:.6f}, "
                         f"soft_raw={soft_raw_score:.6f}, soft_blank={soft_blank_score:.6f}"

@@ -1163,6 +1163,94 @@ def compute_stroke_overlap_matrix(
     return overlap_matrix
 
 
+
+def sample_cubic_bezier_strokes(control_points, num_samples=24):
+    """
+    Sample cubic Bezier strokes and their tangent directions.
+    control_points: [num_paths, 4, 2]
+    """
+    device = control_points.device
+    dtype = control_points.dtype
+    t = torch.linspace(0.0, 1.0, num_samples, device=device, dtype=dtype).view(1, num_samples, 1)
+    one_minus_t = 1.0 - t
+
+    p0 = control_points[:, 0:1, :]
+    p1 = control_points[:, 1:2, :]
+    p2 = control_points[:, 2:3, :]
+    p3 = control_points[:, 3:4, :]
+
+    points = (
+        one_minus_t.pow(3) * p0
+        + 3.0 * one_minus_t.pow(2) * t * p1
+        + 3.0 * one_minus_t * t.pow(2) * p2
+        + t.pow(3) * p3
+    )
+    tangents = (
+        3.0 * one_minus_t.pow(2) * (p1 - p0)
+        + 6.0 * one_minus_t * t * (p2 - p1)
+        + 3.0 * t.pow(2) * (p3 - p2)
+    )
+    tangents = F.normalize(tangents, dim=-1, eps=1e-6)
+    lengths = (points[:, 1:] - points[:, :-1]).norm(dim=-1).sum(dim=1)
+    return points, tangents, lengths
+
+
+def compute_stroke_similarity_matrix(
+    control_points,
+    num_samples=24,
+    distance_threshold=6.0,
+    tangent_threshold=0.85,
+    length_threshold=0.5,
+):
+    """
+    Precompute pairwise stroke redundancy from sampled Bezier geometry.
+    Two strokes are considered similar when they are spatially close, have
+    similar tangent directions, and have comparable lengths. The diagonal is zero.
+    """
+    num_paths = control_points.shape[0]
+    num_samples = max(2, int(num_samples))
+    distance_threshold = max(float(distance_threshold), 1e-6)
+    tangent_denominator = max(1.0 - float(tangent_threshold), 1e-6)
+    length_denominator = max(1.0 - float(length_threshold), 1e-6)
+
+    with torch.no_grad():
+        points, tangents, lengths = sample_cubic_bezier_strokes(control_points, num_samples)
+        distances = (points[:, None, :, None, :] - points[None, :, None, :, :]).norm(dim=-1)
+
+        i_to_j_dist, i_to_j_idx = distances.min(dim=3)
+        j_to_i_dist, j_to_i_idx = distances.min(dim=2)
+        chamfer_distance = 0.5 * (i_to_j_dist.mean(dim=2) + j_to_i_dist.mean(dim=2))
+        distance_score = F.relu((distance_threshold - chamfer_distance) / distance_threshold)
+
+        tangents_i = tangents[:, None, :, :].expand(num_paths, num_paths, num_samples, 2)
+        tangents_j = tangents[None, :, :, :].expand(num_paths, num_paths, num_samples, 2)
+        nearest_tangents_j = torch.gather(
+            tangents_j,
+            dim=2,
+            index=i_to_j_idx.unsqueeze(-1).expand(-1, -1, -1, 2),
+        )
+        nearest_tangents_i = torch.gather(
+            tangents_i,
+            dim=2,
+            index=j_to_i_idx.unsqueeze(-1).expand(-1, -1, -1, 2),
+        )
+        tangent_similarity = 0.5 * (
+            torch.abs((tangents_i * nearest_tangents_j).sum(dim=-1)).mean(dim=2)
+            + torch.abs((tangents_j * nearest_tangents_i).sum(dim=-1)).mean(dim=2)
+        )
+        tangent_score = F.relu((tangent_similarity - tangent_threshold) / tangent_denominator)
+
+        lengths = lengths.clamp_min(1e-6)
+        min_lengths = torch.minimum(lengths[:, None], lengths[None, :])
+        max_lengths = torch.maximum(lengths[:, None], lengths[None, :]).clamp_min(1e-6)
+        length_ratio = min_lengths / max_lengths
+        length_score = F.relu((length_ratio - length_threshold) / length_denominator)
+
+        similarity_matrix = distance_score * tangent_score * length_score
+        similarity_matrix.fill_diagonal_(0.0)
+
+    return similarity_matrix.to(device=control_points.device, dtype=torch.float32)
+
 def optimize_stroke_opacity_to_image_features(
     control_points,
     target_image_features,
@@ -1178,6 +1266,11 @@ def optimize_stroke_opacity_to_image_features(
     temperature=1.0,
     overlap_weight=0.0,
     overlap_threshold=0.2,
+    similarity_weight=0.0,
+    similarity_distance_threshold=6.0,
+    similarity_tangent_threshold=0.85,
+    similarity_length_threshold=0.5,
+    similarity_num_samples=24,
     progress=True,
     progress_output_dir=None,
     progress_prefix="opacity",
@@ -1202,6 +1295,7 @@ def optimize_stroke_opacity_to_image_features(
             "count_loss": 0.0,
             "binary_loss": 0.0,
             "overlap_loss": 0.0,
+            "similarity_loss": 0.0,
         }
         return control_points, list(range(num_paths)), alpha, losses
 
@@ -1220,6 +1314,17 @@ def optimize_stroke_opacity_to_image_features(
         )
     else:
         overlap_matrix = None
+
+    if similarity_weight > 0:
+        similarity_matrix = compute_stroke_similarity_matrix(
+            control_points,
+            num_samples=similarity_num_samples,
+            distance_threshold=similarity_distance_threshold,
+            tangent_threshold=similarity_tangent_threshold,
+            length_threshold=similarity_length_threshold,
+        )
+    else:
+        similarity_matrix = None
 
     logits = torch.full((num_paths,), init_logit, device=device, requires_grad=True)
     optimizer = torch.optim.Adam([logits], lr=lr)
@@ -1260,18 +1365,26 @@ def optimize_stroke_opacity_to_image_features(
             + (1.0 - alpha_safe) * torch.log(1.0 - alpha_safe)
         ).mean()
 
-        if overlap_matrix is not None:
+        if overlap_matrix is not None or similarity_matrix is not None:
             pair_alpha = gate[:, None] * gate[None, :]
             pair_count = max(target_num_paths * (target_num_paths - 1), 1)
+
+        if overlap_matrix is not None:
             overlap_loss = (pair_alpha * overlap_matrix).sum() / pair_count
         else:
             overlap_loss = alpha.new_tensor(0.0)
+
+        if similarity_matrix is not None:
+            similarity_loss = (pair_alpha * similarity_matrix).sum() / pair_count
+        else:
+            similarity_loss = alpha.new_tensor(0.0)
 
         loss = (
             clip_loss
             + count_weight * count_loss
             + binary_weight * binary_loss
             + overlap_weight * overlap_loss
+            + similarity_weight * similarity_loss
         )
 
         loss.backward()
@@ -1285,6 +1398,7 @@ def optimize_stroke_opacity_to_image_features(
             "count_loss": count_loss.item(),
             "binary_loss": binary_loss.item(),
             "overlap_loss": overlap_loss.item(),
+            "similarity_loss": similarity_loss.item(),
         }
         
         if current_loss < best_loss - min_delta:
@@ -1301,6 +1415,7 @@ def optimize_stroke_opacity_to_image_features(
                 count=f"{last_losses['count_loss']:.4f}",
                 binary=f"{last_losses['binary_loss']:.4f}",
                 overlap=f"{last_losses['overlap_loss']:.4f}",
+                sim=f"{last_losses['similarity_loss']:.4f}",
                 alpha_sum=f"{alpha.sum().item():.2f}",
             )
 
@@ -1312,6 +1427,7 @@ def optimize_stroke_opacity_to_image_features(
                     count=f"{count_loss.item():.4f}",
                     binary=f"{binary_loss.item():.4f}",
                     overlap=f"{overlap_loss.item():.4f}",
+                    sim=f"{similarity_loss.item():.4f}",
                     alpha_sum=f"{alpha.sum().item():.2f}",
                     stop="early",
                 )

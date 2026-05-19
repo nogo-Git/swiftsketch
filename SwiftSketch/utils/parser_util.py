@@ -233,6 +233,16 @@ def add_generate_options(parser):
                     help="Weight for penalizing selected strokes with redundant pixel overlap.")
     group.add_argument("--opacity_overlap_threshold", default=0.2, type=float,
                     help="Ignore pairwise stroke overlap ratios below this threshold.")
+    group.add_argument("--opacity_similarity_weight", default=0.0, type=float,
+                    help="Weight for penalizing selected strokes with similar nearby geometry.")
+    group.add_argument("--opacity_similarity_distance_threshold", default=6.0, type=float,
+                    help="Maximum average sampled-point distance in pixels for similar strokes.")
+    group.add_argument("--opacity_similarity_tangent_threshold", default=0.85, type=float,
+                    help="Minimum orientation-insensitive tangent cosine for similar strokes.")
+    group.add_argument("--opacity_similarity_length_threshold", default=0.5, type=float,
+                    help="Minimum shorter/longer length ratio for similar strokes.")
+    group.add_argument("--opacity_similarity_num_samples", default=24, type=int,
+                    help="Number of Bezier samples per stroke for similarity computation.")
     group.add_argument("--opacity_init_logit", default=3.0, type=float,
                     help="Initial logit for opacity gates.")
     group.add_argument("--opacity_temperature", default=1.0, type=float,
