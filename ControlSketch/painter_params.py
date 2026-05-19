@@ -417,17 +417,28 @@ class Painter(torch.nn.Module):
 
     def get_points_smart_clustering(self, mask, weights):
         all_points = self.num_paths
-        num_regions = 6  # Number of regions to divide  
-        point_per_region = round(all_points / (2 * num_regions))
-        remain_points = all_points - (point_per_region* num_regions)
+        num_regions = 6  # Number of regions to divide
+
+        # Keep a small guaranteed allocation per region, but never exceed all_points.
+        base_points_per_region = min(3, all_points // num_regions)
+        remain_points = all_points - (base_points_per_region * num_regions)
+
         spatial_weight = 1.0  # Weight for spatial coordinates
         weight_scale = 0.5  # Scale for pixel weights (e.g., intensity)
-        
-        segmented_image, labels = self.weighted_kmeans_segmentation(mask, weights, num_regions, spatial_weight, weight_scale)
-        total_points = remain_points  # Total points to distribute
-        points_per_region = self.distribute_points(labels, weights, mask, total_points)
-        final_points_per_region = points_per_region + 3
-        combined_points, segmented_image_ = self.distribute_and_visualize_points(segmented_image, labels, final_points_per_region, mask)
+
+        segmented_image, labels = self.weighted_kmeans_segmentation(
+            mask, weights, num_regions, spatial_weight, weight_scale
+        )
+
+        extra_points_per_region = self.distribute_points(
+            labels, weights, mask, remain_points
+        )
+
+        final_points_per_region = extra_points_per_region + base_points_per_region
+
+        combined_points, segmented_image_ = self.distribute_and_visualize_points(
+            segmented_image, labels, final_points_per_region, mask
+        )
         return combined_points, segmented_image_
 
 
