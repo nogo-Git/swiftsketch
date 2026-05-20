@@ -4,6 +4,7 @@ __pycache__/
 
 # outputs
 SwiftSketch/output_sketches/
+ControlSketch/output_sketches
 
 # models
 SwiftSketch/save/
@@ -12,6 +13,10 @@ SwiftSketch/save/
 
 # diffvg
 diffvg/
+
+# data
+controlsketch_var_data
+preview
 
 # その他
 *.log
