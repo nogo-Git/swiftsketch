@@ -16,6 +16,7 @@ from attn_utils import (
     resize_net_attn_map,
     return_net_attn_map,
 )
+import semantic_init
 
 
 
@@ -443,15 +444,35 @@ class Painter(torch.nn.Module):
 
 
     def set_attention_threshold_map(self):
-        attn_map= torch.pow(self.attention_map, 2)
-        attn_map_to_plot = (attn_map * self.mask) 
-        weights = attn_map.numpy().astype(np.float32)
-        
-        mask= self.mask
-        mask = (mask / mask.max()) * 255
-        mask = mask.numpy().astype(np.uint8)
+        attn_map = torch.pow(self.attention_map, 2)
+        attn_map_to_plot = (attn_map * self.mask)
 
-        self.inds, self.clustered_mask_to_plot = self.get_points_smart_clustering(mask, weights)
+        weights = attn_map.detach().cpu().numpy().astype(np.float32)
+
+        mask = self.mask
+        mask = (mask / mask.max()) * 255
+        mask = mask.detach().cpu().numpy().astype(np.uint8)
+
+        if getattr(self.args, "init_placement", "kmeans") == "semantic":
+            result = semantic_init.build_semantic_initial_points(
+                mask=self.mask,
+                total_points=self.num_paths,
+                canvas_width=self.canvas_width,
+                canvas_height=self.canvas_height,
+                parts_text=getattr(self.args, "semantic_parts", "outline"),
+                weights_text=getattr(self.args, "semantic_weights", ""),
+                part_masks=None,
+                min_perimeter=getattr(self.args, "semantic_min_perimeter", 8.0),
+            )
+
+            if result is not None:
+                self.inds, self.clustered_mask_to_plot = result
+            elif getattr(self.args, "semantic_fallback", "kmeans") == "kmeans":
+                self.inds, self.clustered_mask_to_plot = self.get_points_smart_clustering(mask, weights)
+            else:
+                raise RuntimeError("Semantic initialization failed and fallback is disabled.")
+        else:
+            self.inds, self.clustered_mask_to_plot = self.get_points_smart_clustering(mask, weights)
 
         self.inds_normalised = np.zeros(self.inds.shape)
         self.inds_normalised[:, 0] = self.inds[:, 0] / self.canvas_width

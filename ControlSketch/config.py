@@ -75,6 +75,19 @@ def parse_arguments():
                         help="if True, use the initialization method to set the location of the initial strokes, and not random")
     parser.add_argument("--object_name", type=str, default="", help="the word for extrcting the object attention map")
     parser.add_argument("--attn_model", type=str,  default="diffusion", choices=["diffusion", "clip"], help="Choose between 'diffusion' and 'clip'")
+    parser.add_argument("--init_placement", type=str, default="kmeans",
+                        choices=["kmeans", "semantic"],
+                        help="initial stroke placement method")
+    parser.add_argument("--semantic_parts", type=str, default="outline",
+                        help="comma-separated semantic parts for initialization, e.g. outline,eyes,nose")
+    parser.add_argument("--semantic_weights", type=str,
+                        default="outline=1.0,eyes=3.0,nose=2.0,ears=1.5,stripes=0.5,pattern=0.5",
+                        help="comma-separated semantic weights, e.g. outline=1.0,eyes=3.0")
+    parser.add_argument("--semantic_fallback", type=str, default="kmeans",
+                        choices=["kmeans", "error"],
+                        help="fallback behavior if semantic initialization fails")
+    parser.add_argument("--semantic_min_perimeter", type=float, default=8.0,
+                        help="minimum contour perimeter used for semantic initialization")
 
     # =================================
     # ============= control_net sds loss ==============
