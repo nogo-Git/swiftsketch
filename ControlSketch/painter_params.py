@@ -17,6 +17,7 @@ from attn_utils import (
     return_net_attn_map,
 )
 import semantic_init
+import semantic_segmenter
 
 
 
@@ -454,6 +455,45 @@ class Painter(torch.nn.Module):
         mask = mask.detach().cpu().numpy().astype(np.uint8)
 
         if getattr(self.args, "init_placement", "kmeans") == "semantic":
+            part_masks = None
+            parts = semantic_init.parse_semantic_parts(
+                getattr(self.args, "semantic_parts", "outline")
+            )
+            non_outline_parts = [part for part in parts if part != "outline"]
+
+            if (
+                non_outline_parts
+                and getattr(self.args, "semantic_segmenter", "grounded_sam") == "grounded_sam"
+            ):
+                try:
+                    segmenter = semantic_segmenter.GroundedSAMSegmenter(
+                        device=self.device,
+                        grounding_model_id=getattr(
+                            self.args,
+                            "grounding_dino_model",
+                            "IDEA-Research/grounding-dino-base",
+                        ),
+                        sam_model_id=getattr(
+                            self.args,
+                            "sam_model",
+                            "facebook/sam-vit-base",
+                        ),
+                        box_threshold=getattr(self.args, "grounding_box_threshold", 0.25),
+                        text_threshold=getattr(self.args, "grounding_text_threshold", 0.20),
+                        min_area_ratio=getattr(self.args, "semantic_min_area_ratio", 0.0002),
+                        max_masks_per_part=getattr(self.args, "semantic_max_masks_per_part", 4),
+                    )
+
+                    part_masks = segmenter.segment_parts(
+                        image=self.args.input_image,
+                        parts=non_outline_parts,
+                        foreground_mask=self.mask,
+                        object_name=getattr(self.args, "object_name", ""),
+                    )
+                except Exception as err:
+                    print(f"Grounded-SAM segmentation failed: {err}", flush=True)
+                    part_masks = None
+
             result = semantic_init.build_semantic_initial_points(
                 mask=self.mask,
                 total_points=self.num_paths,
@@ -461,7 +501,7 @@ class Painter(torch.nn.Module):
                 canvas_height=self.canvas_height,
                 parts_text=getattr(self.args, "semantic_parts", "outline"),
                 weights_text=getattr(self.args, "semantic_weights", ""),
-                part_masks=None,
+                part_masks=part_masks,
                 min_perimeter=getattr(self.args, "semantic_min_perimeter", 8.0),
             )
 

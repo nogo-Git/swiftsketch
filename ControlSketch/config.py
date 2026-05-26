@@ -88,6 +88,16 @@ def parse_arguments():
                         help="fallback behavior if semantic initialization fails")
     parser.add_argument("--semantic_min_perimeter", type=float, default=8.0,
                         help="minimum contour perimeter used for semantic initialization")
+    parser.add_argument("--semantic_segmenter", type=str, default="grounded_sam",
+                        choices=["none", "grounded_sam"])
+    parser.add_argument("--grounding_dino_model", type=str,
+                        default="IDEA-Research/grounding-dino-base")
+    parser.add_argument("--sam_model", type=str,
+                        default="facebook/sam-vit-base")
+    parser.add_argument("--grounding_box_threshold", type=float, default=0.25)
+    parser.add_argument("--grounding_text_threshold", type=float, default=0.20)
+    parser.add_argument("--semantic_min_area_ratio", type=float, default=0.0002)
+    parser.add_argument("--semantic_max_masks_per_part", type=int, default=4)
 
     # =================================
     # ============= control_net sds loss ==============
