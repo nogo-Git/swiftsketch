@@ -35,7 +35,7 @@ def save_npz_preview(npz_path, output_root):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("input_dir", help="Directory containing .npz files")
+    parser.add_argument("--input_dir", help="Directory containing .npz files")
     parser.add_argument(
         "--output_dir",
         default="preview",
