@@ -413,6 +413,28 @@ class Painter(torch.nn.Module):
         segmented_image_[mask == 0] = 255
         combined_points = np.array(combined_points)
         return combined_points, segmented_image_
+
+    def ensure_num_initial_points(self, points, mask):
+        points = np.asarray(points, dtype=np.float32).reshape(-1, 2)
+        if len(points) >= self.num_paths:
+            return points[:self.num_paths]
+
+        y_coords, x_coords = np.where(mask > 0)
+        valid_coords = np.column_stack((x_coords, y_coords)).astype(np.float32)
+        if len(valid_coords) == 0:
+            valid_coords = np.array(
+                [[self.canvas_width / 2, self.canvas_height / 2]],
+                dtype=np.float32,
+            )
+
+        missing = self.num_paths - len(points)
+        replace = len(valid_coords) < missing
+        chosen = np.random.choice(len(valid_coords), size=missing, replace=replace)
+        extra_points = valid_coords[chosen]
+
+        if len(points) == 0:
+            return extra_points
+        return np.concatenate([points, extra_points], axis=0)
     
 
     def get_points_smart_clustering(self, mask, weights):
@@ -439,6 +461,7 @@ class Painter(torch.nn.Module):
         combined_points, segmented_image_ = self.distribute_and_visualize_points(
             segmented_image, labels, final_points_per_region, mask
         )
+        combined_points = self.ensure_num_initial_points(combined_points, mask)
         return combined_points, segmented_image_
 
 
