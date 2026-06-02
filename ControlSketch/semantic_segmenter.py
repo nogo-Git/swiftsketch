@@ -45,6 +45,9 @@ class GroundedSAMSegmenter:
         min_area_ratio=0.0002,
         max_masks_per_part=4,
         debug_dir=None,
+        max_box_object_area_ratio=0.90,
+        max_part_area_ratio=0.90,
+        prefer_small_boxes=True,
     ):
         self.device = device
         self.box_threshold = box_threshold
@@ -65,6 +68,10 @@ class GroundedSAMSegmenter:
         self.debug_dir = debug_dir
         if self.debug_dir is not None:
             os.makedirs(self.debug_dir, exist_ok=True)
+            
+        self.max_box_object_area_ratio = max_box_object_area_ratio
+        self.max_part_area_ratio = max_part_area_ratio
+        self.prefer_small_boxes = prefer_small_boxes
 
     def segment_parts(self, image, parts, foreground_mask=None, object_name=""):
         image = image.convert("RGB") if isinstance(image, Image.Image) else Image.fromarray(image).convert("RGB")
@@ -92,11 +99,19 @@ class GroundedSAMSegmenter:
                 warnings.warn(f"Grounding DINO found no boxes for part: {part}")
                 continue
 
-            boxes, scores = self._keep_top_boxes(boxes, scores)
+            boxes, scores = self._filter_large_boxes(boxes, scores, fg, part)
+            self._save_grounding_boxes(image, part, boxes, scores, "filtered")
+
+            if boxes.numel() == 0:
+                print(f"[grounded_sam] no usable boxes for part={part}", flush=True)
+                continue
+
+            boxes, scores = self._keep_top_boxes(boxes, scores, fg)
             self._save_grounding_boxes(image, part, boxes, scores, "used")
     
             masks = self._segment_boxes(image, boxes)
 
+            fg_area = max(int(fg.sum()), 1)
             merged = np.zeros((h, w), dtype=np.uint8)
             min_area = int(h * w * self.min_area_ratio)
 
@@ -104,7 +119,18 @@ class GroundedSAMSegmenter:
                 mask_np = mask.astype(np.uint8)
                 mask_np = np.logical_and(mask_np > 0, fg > 0).astype(np.uint8)
 
-                if int(mask_np.sum()) < min_area:
+                mask_area = int(mask_np.sum())
+                fg_ratio = mask_area / float(fg_area)
+
+                print(
+                    f"[grounded_sam] part={part} mask_area={mask_area} fg_ratio={fg_ratio:.3f}",
+                    flush=True,
+                )
+
+                if mask_area < min_area:
+                    continue
+                if fg_ratio > self.max_part_area_ratio:
+                    print(f"[grounded_sam] skip whole-object-like mask: {part}", flush=True)
                     continue
 
                 merged = np.logical_or(merged > 0, mask_np > 0).astype(np.uint8)
@@ -180,11 +206,47 @@ class GroundedSAMSegmenter:
 
         return [(mask > 0).numpy().astype(np.uint8) for mask in masks]
 
-    def _keep_top_boxes(self, boxes, scores):
-        if len(boxes) <= self.max_masks_per_part:
+    def _foreground_bbox_area(self, fg):
+        ys, xs = np.where(fg > 0)
+        if len(xs) == 0:
+            return fg.shape[0] * fg.shape[1]
+        return max(int((xs.max() - xs.min() + 1) * (ys.max() - ys.min() + 1)), 1)
+
+    def _filter_large_boxes(self, boxes, scores, fg, part):
+        if boxes.numel() == 0:
             return boxes, scores
 
-        order = torch.argsort(scores, descending=True)[:self.max_masks_per_part]
+        object_box_area = self._foreground_bbox_area(fg)
+        box_w = (boxes[:, 2] - boxes[:, 0]).clamp(min=0)
+        box_h = (boxes[:, 3] - boxes[:, 1]).clamp(min=0)
+        object_area_ratio = (box_w * box_h) / float(object_box_area)
+
+        keep = object_area_ratio <= self.max_box_object_area_ratio
+        print(
+            f"[grounded_sam] part={part} box_object_ratios="
+            f"{[round(float(v), 3) for v in object_area_ratio]} keep={int(keep.sum())}/{len(keep)}",
+            flush=True,
+        )
+
+        return boxes[keep], scores[keep]
+
+    def _keep_top_boxes(self, boxes, scores, fg):
+        if len(boxes) <= self.max_masks_per_part and not self.prefer_small_boxes:
+            return boxes, scores
+
+        object_box_area = self._foreground_bbox_area(fg)
+        box_w = (boxes[:, 2] - boxes[:, 0]).clamp(min=0)
+        box_h = (boxes[:, 3] - boxes[:, 1]).clamp(min=0)
+        area_ratio = (box_w * box_h) / float(object_box_area)
+
+        if self.prefer_small_boxes:
+            rank_score = scores / torch.sqrt(area_ratio + 1e-6)
+        else:
+            rank_score = scores
+
+        order = torch.argsort(rank_score, descending=True)
+        order = order[:self.max_masks_per_part]
+
         return boxes[order], scores[order]
 
     def _make_query(self, part, object_name):
@@ -221,3 +283,44 @@ class GroundedSAMSegmenter:
         save_path = os.path.join(self.debug_dir, f"grounding_{part}_{suffix}.jpg")
         cv2.imwrite(save_path, image_np)
         print(f"[grounded_sam] saved boxes: {save_path}", flush=True)
+        
+    def _foreground_bbox_area(self, fg):
+        ys, xs = np.where(fg > 0)
+        if len(xs) == 0:
+            return fg.shape[0] * fg.shape[1]
+        return max(int((xs.max() - xs.min() + 1) * (ys.max() - ys.min() + 1)), 1)
+
+    def _filter_large_boxes(self, boxes, scores, fg, part):
+        if boxes.numel() == 0:
+            return boxes, scores
+
+        object_box_area = self._foreground_bbox_area(fg)
+        box_w = (boxes[:, 2] - boxes[:, 0]).clamp(min=0)
+        box_h = (boxes[:, 3] - boxes[:, 1]).clamp(min=0)
+        object_area_ratio = (box_w * box_h) / float(object_box_area)
+
+        keep = object_area_ratio <= self.max_box_object_area_ratio
+        print(
+            f"[grounded_sam] part={part} box_object_ratios="
+            f"{[round(float(v), 3) for v in object_area_ratio]} keep={int(keep.sum())}/{len(keep)}",
+            flush=True,
+        )
+        return boxes[keep], scores[keep]
+
+    def _keep_top_boxes(self, boxes, scores, fg):
+        if len(boxes) == 0:
+            return boxes, scores
+
+        object_box_area = self._foreground_bbox_area(fg)
+        box_w = (boxes[:, 2] - boxes[:, 0]).clamp(min=0)
+        box_h = (boxes[:, 3] - boxes[:, 1]).clamp(min=0)
+        area_ratio = (box_w * box_h) / float(object_box_area)
+
+        if self.prefer_small_boxes:
+            rank_score = scores / torch.sqrt(area_ratio + 1e-6)
+        else:
+            rank_score = scores
+
+        order = torch.argsort(rank_score, descending=True)
+        order = order[:self.max_masks_per_part]
+        return boxes[order], scores[order]

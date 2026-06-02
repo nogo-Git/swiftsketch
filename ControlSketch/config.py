@@ -98,6 +98,9 @@ def parse_arguments():
     parser.add_argument("--grounding_text_threshold", type=float, default=0.20)
     parser.add_argument("--semantic_min_area_ratio", type=float, default=0.0002)
     parser.add_argument("--semantic_max_masks_per_part", type=int, default=4)
+    parser.add_argument("--grounding_max_box_object_area_ratio", type=float, default=0.90)
+    parser.add_argument("--semantic_max_part_area_ratio", type=float, default=0.90)
+    parser.add_argument("--grounding_prefer_small_boxes", type=int, default=1)
 
     # =================================
     # ============= control_net sds loss ==============

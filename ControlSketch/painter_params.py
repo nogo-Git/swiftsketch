@@ -483,6 +483,9 @@ class Painter(torch.nn.Module):
                         min_area_ratio=getattr(self.args, "semantic_min_area_ratio", 0.0002),
                         max_masks_per_part=getattr(self.args, "semantic_max_masks_per_part", 4),
                         debug_dir=os.path.join(self.args.output_dir, "semantic_debug"),
+                        max_box_object_area_ratio=getattr(self.args, "grounding_max_box_object_area_ratio", 0.35),
+                        max_part_area_ratio=getattr(self.args, "semantic_max_part_area_ratio", 0.25),
+                        prefer_small_boxes=getattr(self.args, "grounding_prefer_small_boxes", 1) == 1,
                     )
 
                     part_masks = segmenter.segment_parts(
