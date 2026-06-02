@@ -18,7 +18,7 @@ from attn_utils import (
 )
 import semantic_init
 import semantic_segmenter
-
+import os
 
 
 class Painter(torch.nn.Module):
@@ -482,6 +482,7 @@ class Painter(torch.nn.Module):
                         text_threshold=getattr(self.args, "grounding_text_threshold", 0.20),
                         min_area_ratio=getattr(self.args, "semantic_min_area_ratio", 0.0002),
                         max_masks_per_part=getattr(self.args, "semantic_max_masks_per_part", 4),
+                        debug_dir=os.path.join(self.args.output_dir, "semantic_debug"),
                     )
 
                     part_masks = segmenter.segment_parts(

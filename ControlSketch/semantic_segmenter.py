@@ -6,6 +6,7 @@ import torch
 import torch.nn.functional as F
 from PIL import Image
 from transformers import AutoModelForZeroShotObjectDetection, AutoProcessor, SamModel, SamProcessor
+import os
 
 
 def _to_binary_mask(mask, target_size):
@@ -43,6 +44,7 @@ class GroundedSAMSegmenter:
         text_threshold=0.20,
         min_area_ratio=0.0002,
         max_masks_per_part=4,
+        debug_dir=None,
     ):
         self.device = device
         self.box_threshold = box_threshold
@@ -59,6 +61,10 @@ class GroundedSAMSegmenter:
         self.sam_processor = SamProcessor.from_pretrained(sam_model_id)
         self.sam_model = SamModel.from_pretrained(sam_model_id).to(device)
         self.sam_model.eval()
+        
+        self.debug_dir = debug_dir
+        if self.debug_dir is not None:
+            os.makedirs(self.debug_dir, exist_ok=True)
 
     def segment_parts(self, image, parts, foreground_mask=None, object_name=""):
         image = image.convert("RGB") if isinstance(image, Image.Image) else Image.fromarray(image).convert("RGB")
@@ -73,11 +79,22 @@ class GroundedSAMSegmenter:
 
         for part in parts:
             boxes, scores = self._detect_boxes(image, part, object_name)
+
+            print(
+                f"[grounded_sam] part={part} raw_boxes={len(boxes)} "
+                f"scores={[round(float(s), 3) for s in scores]}",
+                flush=True,
+            )
+
+            self._save_grounding_boxes(image, part, boxes, scores, "raw")
+
             if boxes.numel() == 0:
                 warnings.warn(f"Grounding DINO found no boxes for part: {part}")
                 continue
 
             boxes, scores = self._keep_top_boxes(boxes, scores)
+            self._save_grounding_boxes(image, part, boxes, scores, "used")
+    
             masks = self._segment_boxes(image, boxes)
 
             merged = np.zeros((h, w), dtype=np.uint8)
@@ -177,3 +194,30 @@ class GroundedSAMSegmenter:
         if object_name:
             return f"{object_name} {part}"
         return part
+
+    def _save_grounding_boxes(self, image, part, boxes, scores, suffix):
+        if self.debug_dir is None:
+            return
+
+        image_np = np.array(image.convert("RGB")).copy()
+        image_np = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
+
+        for i, box in enumerate(boxes):
+            x0, y0, x1, y1 = [int(round(v)) for v in box.tolist()]
+            score = float(scores[i]) if i < len(scores) else 0.0
+
+            cv2.rectangle(image_np, (x0, y0), (x1, y1), (0, 0, 255), 2)
+            cv2.putText(
+                image_np,
+                f"{part}:{score:.2f}",
+                (x0, max(0, y0 - 6)),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 0, 255),
+                1,
+                cv2.LINE_AA,
+            )
+
+        save_path = os.path.join(self.debug_dir, f"grounding_{part}_{suffix}.jpg")
+        cv2.imwrite(save_path, image_np)
+        print(f"[grounded_sam] saved boxes: {save_path}", flush=True)

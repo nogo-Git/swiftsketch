@@ -15,9 +15,6 @@ DEFAULT_SEMANTIC_WEIGHTS = {
     "mouth": 2.0,
     "ears": 1.5,
     "ear": 1.5,
-    "stripes": 0.5,
-    "stripe": 0.5,
-    "pattern": 0.5,
 }
 
 
