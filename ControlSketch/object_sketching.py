@@ -4,6 +4,9 @@ warnings.simplefilter('ignore')
 import os
 import sys
 import traceback
+import errno
+import tempfile
+import time
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -15,6 +18,50 @@ from control_sds_loss_file import ControlSDSLoss
 import config
 import sketch_utils as utils
 from painter_params import Painter, PainterOptimizer
+
+
+def load_npz_dict(path):
+    with np.load(path, allow_pickle=True) as npz_file:
+        return {key: npz_file[key] for key in npz_file.files}
+
+
+def atomic_save_dict(path, data, max_retries=5):
+    directory = os.path.dirname(os.path.abspath(path)) or "."
+    basename = os.path.basename(path)
+    ext = os.path.splitext(basename)[-1]
+
+    for attempt in range(1, max_retries + 1):
+        temp_path = None
+        try:
+            fd, temp_path = tempfile.mkstemp(
+                prefix=f".{basename}.",
+                suffix=f".tmp{ext}",
+                dir=directory,
+            )
+            os.close(fd)
+
+            if ext == ".npy":
+                np.save(temp_path, data)
+            else:
+                np.savez_compressed(temp_path, **data)
+
+            os.replace(temp_path, path)
+            return
+        except OSError as exc:
+            if temp_path and os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except OSError:
+                    pass
+            if exc.errno == errno.ESTALE and attempt < max_retries:
+                print(
+                    f"[warn] stale file handle while saving {path}; "
+                    f"retrying ({attempt}/{max_retries})",
+                    flush=True,
+                )
+                time.sleep(attempt)
+                continue
+            raise
 
 
 def load_renderer(args, target_im=None, mask=None):
@@ -188,11 +235,11 @@ def main(args):
         if os.path.splitext(os.path.basename(args.target))[-1] == ".npy":
             data = np.load(args.target, allow_pickle=True).item()
             data[final_key] = svg_content
-            np.save(args.target, data)
         else:
-            data = dict(np.load(args.target, allow_pickle=True))
+            data = load_npz_dict(args.target)
             data[final_key] = svg_content
-            np.savez_compressed(args.target, **data)
+
+        atomic_save_dict(args.target, data)
 
 
 

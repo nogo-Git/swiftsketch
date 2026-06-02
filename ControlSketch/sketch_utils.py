@@ -302,20 +302,19 @@ def get_mask(im: Image, device):
 
 def load_compressed_npz(file_path):
     """Load compressed .npz file and reconstruct the original objects."""
-    data = np.load(file_path, allow_pickle=True)
+    with np.load(file_path, allow_pickle=True) as data:
+        # Reconstruct the image from bytes
+        img_bytes = data["image"].tobytes()
+        image = Image.open(io.BytesIO(img_bytes))
 
-    # Reconstruct the image from bytes
-    img_bytes = data["image"].tobytes()
-    image = Image.open(io.BytesIO(img_bytes))
+        result = {"image": image}
 
-    result = {"image": image}
-
-    if "mask" in data:
-        result["mask"] = torch.from_numpy(data["mask"]).float()
-    if "attn_map" in data:
-        result["attn_map"] = torch.from_numpy(data["attn_map"])
-    if "caption" in data:
-        result["caption"] = data["caption"].item()
+        if "mask" in data:
+            result["mask"] = torch.from_numpy(data["mask"]).float()
+        if "attn_map" in data:
+            result["attn_map"] = torch.from_numpy(data["attn_map"])
+        if "caption" in data:
+            result["caption"] = data["caption"].item()
 
     return result
 
