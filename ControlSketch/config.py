@@ -101,6 +101,14 @@ def parse_arguments():
     parser.add_argument("--grounding_max_box_object_area_ratio", type=float, default=0.90)
     parser.add_argument("--semantic_max_part_area_ratio", type=float, default=0.90)
     parser.add_argument("--grounding_prefer_small_boxes", type=int, default=1)
+    parser.add_argument("--semantic_curvature_sampling", type=int, default=0,
+                        help="if 1, sample contour points with curvature-aware density")
+    parser.add_argument("--semantic_curvature_weight", type=float, default=2.0,
+                        help="higher values place more points near high-curvature contour regions")
+    parser.add_argument("--semantic_curvature_window", type=int, default=6,
+                        help="neighbor window used for discrete curvature estimation")
+    parser.add_argument("--semantic_min_sampling_density", type=float, default=0.20,
+                        help="minimum sampling density kept on straight contour regions")
 
     # =================================
     # ============= control_net sds loss ==============

@@ -507,6 +507,10 @@ class Painter(torch.nn.Module):
                 weights_text=getattr(self.args, "semantic_weights", ""),
                 part_masks=part_masks,
                 min_perimeter=getattr(self.args, "semantic_min_perimeter", 8.0),
+                curvature_sampling=getattr(self.args, "semantic_curvature_sampling", 0) == 1,
+                curvature_weight=getattr(self.args, "semantic_curvature_weight", 2.0),
+                curvature_window=getattr(self.args, "semantic_curvature_window", 6),
+                min_sampling_density=getattr(self.args, "semantic_min_sampling_density", 0.20),
             )
 
             if result is not None:

@@ -208,6 +208,10 @@ def build_semantic_initial_points(
     weights_text: str,
     part_masks: Optional[Dict[str, object]] = None,
     min_perimeter: float = 8.0,
+    curvature_sampling: bool = False,
+    curvature_weight: float = 2.0,
+    curvature_window: int = 6,
+    min_sampling_density: float = 0.20,
 ) -> Optional[Tuple[np.ndarray, np.ndarray]]:
     target_size = (canvas_height, canvas_width)
     foreground_mask = _mask_to_numpy(mask, target_size)
@@ -250,7 +254,16 @@ def build_semantic_initial_points(
 
     sampled_points = []
     for region, num_region_points in zip(regions, allocations):
-        sampled = _sample_closed_contour(region["contour"], int(num_region_points))
+        if curvature_sampling:
+            sampled = _sample_closed_contour_curvature_weighted(
+                region["contour"],
+                int(num_region_points),
+                curvature_weight=curvature_weight,
+                curvature_window=curvature_window,
+                min_density=min_sampling_density,
+            )
+        else:
+            sampled = _sample_closed_contour(region["contour"], int(num_region_points))
         if len(sampled) > 0:
             sampled_points.append(sampled)
 
@@ -264,3 +277,85 @@ def build_semantic_initial_points(
 
     vis = _make_visualization(foreground_mask, regions, allocations)
     return points, vis
+
+def _discrete_curvature(points: np.ndarray, window: int = 6) -> np.ndarray:
+    n = len(points)
+    if n < 3:
+        return np.zeros(n, dtype=np.float32)
+
+    window = max(1, min(window, n // 3))
+
+    prev_points = np.roll(points, window, axis=0)
+    next_points = np.roll(points, -window, axis=0)
+
+    v1 = points - prev_points
+    v2 = next_points - points
+
+    n1 = np.linalg.norm(v1, axis=1)
+    n2 = np.linalg.norm(v2, axis=1)
+    valid = (n1 > 1e-6) & (n2 > 1e-6)
+
+    curvature = np.zeros(n, dtype=np.float32)
+    dots = np.sum(v1[valid] * v2[valid], axis=1) / (n1[valid] * n2[valid])
+    dots = np.clip(dots, -1.0, 1.0)
+
+    curvature[valid] = np.arccos(dots).astype(np.float32)
+    return curvature
+
+
+def _sample_closed_contour_curvature_weighted(
+    points: np.ndarray,
+    num_points: int,
+    curvature_weight: float = 2.0,
+    curvature_window: int = 6,
+    min_density: float = 0.20,
+) -> np.ndarray:
+    if num_points <= 0:
+        return np.zeros((0, 2), dtype=np.float32)
+
+    if len(points) < 3:
+        return _sample_closed_contour(points, num_points)
+
+    closed = np.vstack([points, points[0]])
+    starts = closed[:-1]
+    vectors = closed[1:] - closed[:-1]
+    lengths = np.linalg.norm(vectors, axis=1)
+
+    valid = lengths > 1e-6
+    if not np.any(valid):
+        return np.repeat(points[:1].astype(np.float32), num_points, axis=0)
+
+    curvature = _discrete_curvature(points, window=curvature_window)
+
+    scale = np.percentile(curvature, 90)
+    if scale > 1e-6:
+        curvature_norm = np.clip(curvature / scale, 0.0, 1.0)
+    else:
+        curvature_norm = np.zeros_like(curvature)
+
+    point_density = min_density + curvature_weight * curvature_norm
+    segment_density = 0.5 * (point_density + np.roll(point_density, -1))
+
+    starts = starts[valid]
+    vectors = vectors[valid]
+    lengths = lengths[valid]
+    segment_density = segment_density[valid]
+
+    weighted_lengths = lengths * segment_density
+    total_weighted_length = weighted_lengths.sum()
+
+    if total_weighted_length <= 1e-6:
+        return _sample_closed_contour(points, num_points)
+
+    cumulative = np.cumsum(weighted_lengths)
+    samples = np.linspace(0.0, total_weighted_length, num_points, endpoint=False)
+
+    segment_indices = np.searchsorted(cumulative, samples, side="right")
+    segment_indices = np.clip(segment_indices, 0, len(weighted_lengths) - 1)
+
+    previous = np.concatenate([[0.0], cumulative[:-1]])
+    local = samples - previous[segment_indices]
+    ratio = local / weighted_lengths[segment_indices]
+
+    sampled = starts[segment_indices] + vectors[segment_indices] * ratio[:, None]
+    return sampled.astype(np.float32)
