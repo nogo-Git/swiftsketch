@@ -83,6 +83,10 @@ def parse_arguments():
     parser.add_argument("--semantic_weights", type=str,
                         default="outline=1.0,eyes=3.0,nose=2.0,ears=1.5,stripes=0.5,pattern=0.5",
                         help="comma-separated semantic weights, e.g. outline=1.0,eyes=3.0")
+    parser.add_argument("--semantic_vlm_model", type=str, default="Qwen/Qwen2.5-VL-7B-Instruct")
+    parser.add_argument("--semantic_vlm_max_parts", type=int, default=8)
+    parser.add_argument("--semantic_vlm_weight_min", type=float, default=0.5)
+    parser.add_argument("--semantic_vlm_weight_max", type=float, default=4.0)
     parser.add_argument("--semantic_fallback", type=str, default="kmeans",
                         choices=["kmeans", "error"],
                         help="fallback behavior if semantic initialization fails")

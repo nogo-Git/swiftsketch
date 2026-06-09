@@ -73,7 +73,7 @@ class GroundedSAMSegmenter:
         self.max_part_area_ratio = max_part_area_ratio
         self.prefer_small_boxes = prefer_small_boxes
 
-    def segment_parts(self, image, parts, foreground_mask=None, object_name=""):
+    def segment_parts(self, image, parts, foreground_mask=None, object_name="", part_queries=None):
         image = image.convert("RGB") if isinstance(image, Image.Image) else Image.fromarray(image).convert("RGB")
         h, w = image.height, image.width
 

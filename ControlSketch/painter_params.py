@@ -456,9 +456,37 @@ class Painter(torch.nn.Module):
 
         if getattr(self.args, "init_placement", "kmeans") == "semantic":
             part_masks = None
-            parts = semantic_init.parse_semantic_parts(
-                getattr(self.args, "semantic_parts", "outline")
-            )
+
+            parts_text = getattr(self.args, "semantic_parts", "outline")
+            weights_text = getattr(self.args, "semantic_weights", "")
+            part_queries = {}
+
+            if parts_text.strip().lower() == "auto":
+                import semantic_part_enumerator
+
+                enumeration = semantic_part_enumerator.enumerate_semantic_parts(
+                    image=self.args.input_image,
+                    object_name=getattr(self.args, "object_name", ""),
+                    caption=getattr(self.args, "caption", ""),
+                    model_id=getattr(
+                        self.args,
+                        "semantic_vlm_model",
+                        "Qwen/Qwen2.5-VL-7B-Instruct",
+                    ),
+                    device=self.device,
+                    max_parts=getattr(self.args, "semantic_vlm_max_parts", 8),
+                    weight_min=getattr(self.args, "semantic_vlm_weight_min", 0.5),
+                    weight_max=getattr(self.args, "semantic_vlm_weight_max", 4.0),
+                )
+
+                parts_text = enumeration.parts_text
+                weights_text = enumeration.weights_text
+                part_queries = enumeration.part_queries
+
+                print(f"[semantic_vlm] parts={parts_text}", flush=True)
+                print(f"[semantic_vlm] weights={weights_text}", flush=True)
+
+            parts = semantic_init.parse_semantic_parts(parts_text)
             non_outline_parts = [part for part in parts if part != "outline"]
 
             if (
@@ -503,8 +531,8 @@ class Painter(torch.nn.Module):
                 total_points=self.num_paths,
                 canvas_width=self.canvas_width,
                 canvas_height=self.canvas_height,
-                parts_text=getattr(self.args, "semantic_parts", "outline"),
-                weights_text=getattr(self.args, "semantic_weights", ""),
+                parts_text=parts_text,
+                weights_text=weights_text,
                 part_masks=part_masks,
                 min_perimeter=getattr(self.args, "semantic_min_perimeter", 8.0),
                 curvature_sampling=getattr(self.args, "semantic_curvature_sampling", 0) == 1,
