@@ -324,3 +324,99 @@ class GroundedSAMSegmenter:
         order = torch.argsort(rank_score, descending=True)
         order = order[:self.max_masks_per_part]
         return boxes[order], scores[order]
+    
+
+class SAM3SubprocessSegmenter:
+    def __init__(
+        self,
+        sam3_python,
+        checkpoint_path="",
+        confidence_threshold=0.5,
+        min_area_ratio=0.0002,
+        max_masks_per_part=4,
+        debug_dir=None,
+        max_part_area_ratio=0.90,
+    ):
+        self.sam3_python = sam3_python
+        self.checkpoint_path = checkpoint_path
+        self.confidence_threshold = confidence_threshold
+        self.min_area_ratio = min_area_ratio
+        self.max_masks_per_part = max_masks_per_part
+        self.debug_dir = debug_dir
+        self.max_part_area_ratio = max_part_area_ratio
+
+        if self.debug_dir is not None:
+            os.makedirs(self.debug_dir, exist_ok=True)
+
+    def segment_parts(self, image, parts, foreground_mask=None, object_name="", part_queries=None):
+        import json
+        import subprocess
+        import tempfile
+
+        image = image.convert("RGB") if isinstance(image, Image.Image) else Image.fromarray(image).convert("RGB")
+        h, w = image.height, image.width
+
+        fg = _to_binary_mask(foreground_mask, (h, w)) if foreground_mask is not None else np.ones((h, w), dtype=np.uint8)
+
+        worker_path = os.path.join(os.path.dirname(__file__), "sam3_segment_worker.py")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            image_path = os.path.join(tmpdir, "image.png")
+            parts_path = os.path.join(tmpdir, "parts.json")
+            output_path = os.path.join(tmpdir, "sam3_masks.npz")
+
+            image.save(image_path)
+
+            payload = []
+            for part in parts:
+                prompt = part_queries.get(part, part) if part_queries else part
+                if object_name and object_name.lower() not in prompt.lower():
+                    prompt = f"{object_name} {prompt}"
+                payload.append({"part": part, "prompt": prompt})
+
+            with open(parts_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f)
+
+            cmd = [
+                self.sam3_python,
+                worker_path,
+                "--image", image_path,
+                "--parts_json", parts_path,
+                "--output", output_path,
+                "--confidence_threshold", str(self.confidence_threshold),
+            ]
+
+            if self.checkpoint_path:
+                cmd.extend(["--checkpoint_path", self.checkpoint_path])
+
+            subprocess.run(cmd, check=True)
+
+            data = np.load(output_path, allow_pickle=True)
+            part_masks = {}
+
+            min_area = int(h * w * self.min_area_ratio)
+            fg_area = max(int(fg.sum()), 1)
+
+            for part in parts:
+                key = f"{part}__masks"
+                if key not in data:
+                    continue
+
+                merged = np.zeros((h, w), dtype=np.uint8)
+
+                for mask in data[key][:self.max_masks_per_part]:
+                    mask_np = _to_binary_mask(mask, (h, w))
+                    mask_np = np.logical_and(mask_np > 0, fg > 0).astype(np.uint8)
+
+                    area = int(mask_np.sum())
+                    if area < min_area:
+                        continue
+                    if area / float(fg_area) > self.max_part_area_ratio:
+                        continue
+
+                    merged = np.logical_or(merged > 0, mask_np > 0).astype(np.uint8)
+
+                if merged.sum() > 0:
+                    part_masks[part] = torch.from_numpy(merged).float()
+
+            return part_masks

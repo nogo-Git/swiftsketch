@@ -498,41 +498,61 @@ class Painter(torch.nn.Module):
             parts = semantic_init.parse_semantic_parts(parts_text)
             non_outline_parts = [part for part in parts if part != "outline"]
 
-            if (
-                non_outline_parts
-                and getattr(self.args, "semantic_segmenter", "grounded_sam") == "grounded_sam"
-            ):
+            segmenter_name = getattr(self.args, "semantic_segmenter", "sam3")
+
+            if non_outline_parts and segmenter_name != "none":
                 try:
-                    segmenter = semantic_segmenter.GroundedSAMSegmenter(
-                        device=self.device,
-                        grounding_model_id=getattr(
-                            self.args,
-                            "grounding_dino_model",
-                            "IDEA-Research/grounding-dino-base",
-                        ),
-                        sam_model_id=getattr(
-                            self.args,
-                            "sam_model",
-                            "facebook/sam-vit-base",
-                        ),
-                        box_threshold=getattr(self.args, "grounding_box_threshold", 0.25),
-                        text_threshold=getattr(self.args, "grounding_text_threshold", 0.20),
-                        min_area_ratio=getattr(self.args, "semantic_min_area_ratio", 0.0002),
-                        max_masks_per_part=getattr(self.args, "semantic_max_masks_per_part", 4),
-                        debug_dir=os.path.join(self.args.output_dir, "semantic_debug"),
-                        max_box_object_area_ratio=getattr(self.args, "grounding_max_box_object_area_ratio", 0.35),
-                        max_part_area_ratio=getattr(self.args, "semantic_max_part_area_ratio", 0.25),
-                        prefer_small_boxes=getattr(self.args, "grounding_prefer_small_boxes", 1) == 1,
-                    )
+                    if segmenter_name == "sam3":
+                        sam3_python = getattr(self.args, "sam3_python", "")
+                        if not sam3_python:
+                            raise ValueError("--sam3_python must point to the Python executable in sam3_env")
+
+                        segmenter = semantic_segmenter.SAM3SubprocessSegmenter(
+                            sam3_python=sam3_python,
+                            checkpoint_path=getattr(self.args, "sam3_checkpoint_path", ""),
+                            confidence_threshold=getattr(self.args, "sam3_confidence_threshold", 0.5),
+                            min_area_ratio=getattr(self.args, "semantic_min_area_ratio", 0.0002),
+                            max_masks_per_part=getattr(self.args, "semantic_max_masks_per_part", 4),
+                            debug_dir=os.path.join(self.args.output_dir, "semantic_debug"),
+                            max_part_area_ratio=getattr(self.args, "semantic_max_part_area_ratio", 0.25),
+                        )
+
+                    elif segmenter_name == "grounded_sam":
+                        segmenter = semantic_segmenter.GroundedSAMSegmenter(
+                            device=self.device,
+                            grounding_model_id=getattr(
+                                self.args,
+                                "grounding_dino_model",
+                                "IDEA-Research/grounding-dino-base",
+                            ),
+                            sam_model_id=getattr(
+                                self.args,
+                                "sam_model",
+                                "facebook/sam-vit-base",
+                            ),
+                            box_threshold=getattr(self.args, "grounding_box_threshold", 0.25),
+                            text_threshold=getattr(self.args, "grounding_text_threshold", 0.20),
+                            min_area_ratio=getattr(self.args, "semantic_min_area_ratio", 0.0002),
+                            max_masks_per_part=getattr(self.args, "semantic_max_masks_per_part", 4),
+                            debug_dir=os.path.join(self.args.output_dir, "semantic_debug"),
+                            max_box_object_area_ratio=getattr(self.args, "grounding_max_box_object_area_ratio", 0.35),
+                            max_part_area_ratio=getattr(self.args, "semantic_max_part_area_ratio", 0.25),
+                            prefer_small_boxes=getattr(self.args, "grounding_prefer_small_boxes", 1) == 1,
+                        )
+
+                    else:
+                        raise ValueError(f"Unknown semantic segmenter: {segmenter_name}")
 
                     part_masks = segmenter.segment_parts(
                         image=self.args.input_image,
                         parts=non_outline_parts,
                         foreground_mask=self.mask,
                         object_name=getattr(self.args, "object_name", ""),
+                        part_queries=part_queries,
                     )
+
                 except Exception as err:
-                    print(f"Grounded-SAM segmentation failed: {err}", flush=True)
+                    print(f"{segmenter_name} segmentation failed: {err}", flush=True)
                     part_masks = None
 
             result = semantic_init.build_semantic_initial_points(

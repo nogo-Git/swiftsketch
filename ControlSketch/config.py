@@ -106,8 +106,8 @@ def parse_arguments():
                         help="fallback behavior if semantic initialization fails")
     parser.add_argument("--semantic_min_perimeter", type=float, default=8.0,
                         help="minimum contour perimeter used for semantic initialization")
-    parser.add_argument("--semantic_segmenter", type=str, default="grounded_sam",
-                        choices=["none", "grounded_sam"])
+    parser.add_argument("--semantic_segmenter", type=str, default="sam3",
+                    choices=["none", "grounded_sam", "sam3"])
     parser.add_argument("--grounding_dino_model", type=str,
                         default="IDEA-Research/grounding-dino-base")
     parser.add_argument("--sam_model", type=str,
@@ -127,6 +127,11 @@ def parse_arguments():
                         help="neighbor window used for discrete curvature estimation")
     parser.add_argument("--semantic_min_sampling_density", type=float, default=0.20,
                         help="minimum sampling density kept on straight contour regions")
+    parser.add_argument("--sam3_python", type=str, default="",
+                            help="path to python executable in sam3 conda env")
+    parser.add_argument("--sam3_checkpoint_path", type=str, default="",
+                            help="optional local SAM 3 checkpoint path")
+    parser.add_argument("--sam3_confidence_threshold", type=float, default=0.5)
 
     # =================================
     # ============= control_net sds loss ==============
