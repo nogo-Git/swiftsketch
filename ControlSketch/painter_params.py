@@ -478,6 +478,15 @@ class Painter(torch.nn.Module):
                     weight_min=getattr(self.args, "semantic_vlm_weight_min", 0.5),
                     weight_max=getattr(self.args, "semantic_vlm_weight_max", 4.0),
                 )
+                
+                debug_dir = os.path.join(self.args.output_dir, "semantic_debug")
+                os.makedirs(debug_dir, exist_ok=True)
+
+                with open(os.path.join(debug_dir, "vlm_raw_output.txt"), "w", encoding="utf-8") as f:
+                    f.write(enumeration.raw_text)
+                    
+                print("[semantic_vlm] raw output:", flush=True)
+                print(enumeration.raw_text, flush=True)
 
                 parts_text = enumeration.parts_text
                 weights_text = enumeration.weights_text

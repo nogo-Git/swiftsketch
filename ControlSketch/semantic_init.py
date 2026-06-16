@@ -230,7 +230,7 @@ def build_semantic_initial_points(
         else:
             warnings.warn(
                 f"Semantic part '{part}' has no mask yet. "
-                "Only 'outline' is supported before Grounded-SAM integration."
+                "Only 'outline' is supported before semantic segmenter integration."
             )
             continue
 

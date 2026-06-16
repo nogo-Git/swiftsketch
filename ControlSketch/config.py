@@ -8,6 +8,20 @@ import wandb
 
 
 
+TARGET_DICT_EXTENSIONS = (".npy", ".npz")
+TARGET_IMAGE_EXTENSIONS = (
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".bmp",
+    ".gif",
+    ".webp",
+    ".tif",
+    ".tiff",
+)
+TARGET_FILE_EXTENSIONS = TARGET_IMAGE_EXTENSIONS + TARGET_DICT_EXTENSIONS
+
+
 def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
