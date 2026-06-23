@@ -206,7 +206,7 @@ def add_generate_options(parser):
                        help="If 1 and the input is a dict, save the diffusion process SVG into the input dict.")
     group.add_argument("--guidance_param", default=2.5, type=float,
                        help="For classifier-free sampling - specifies the s parameter, as defined in the paper.")
-    group.add_argument("--model_path", default='', type=str,
+    group.add_argument("--model_path", default="", type=str,
                        help="Path to model####.pt file to be sampled.")
     
     
