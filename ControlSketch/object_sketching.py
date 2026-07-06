@@ -15,6 +15,7 @@ from control_sds_loss_file import ControlSDSLoss
 import config
 import sketch_utils as utils
 from painter_params import Painter, PainterOptimizer
+from pathlib import Path
 
 
 def load_renderer(args, target_im=None, mask=None):
@@ -109,6 +110,84 @@ def get_target(args):
     return target, mask
 
 
+def _draw_clip_score(image, clip_score):
+    image = image.convert("RGBA")
+    overlay = Image.new("RGBA", image.size, (255, 255, 255, 0))
+    draw = ImageDraw.Draw(overlay)
+
+    text = f"CLIP score: {clip_score:.2f}"
+    font_size = max(18, min(46, min(image.size) // 24))
+    try:
+        font = ImageFont.truetype(
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+            font_size,
+        )
+    except OSError:
+        font = ImageFont.load_default()
+
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
+
+    margin = max(8, min(image.size) // 45)
+    pad_x = max(8, font_size // 3)
+    pad_y = max(5, font_size // 5)
+
+    x0 = image.width - text_w - pad_x * 2 - margin
+    y0 = image.height - text_h - pad_y * 2 - margin
+    x1 = image.width - margin
+    y1 = image.height - margin
+
+    draw.rounded_rectangle(
+        [x0, y0, x1, y1],
+        radius=max(4, font_size // 5),
+        fill=(255, 255, 255, 220),
+        outline=(0, 0, 0, 90),
+    )
+    draw.text(
+        (x0 + pad_x, y0 + pad_y),
+        text,
+        font=font,
+        fill=(20, 20, 20, 255),
+    )
+
+    return Image.alpha_composite(image, overlay).convert("RGB")
+
+
+def _compute_and_annotate_clip_score(args, sketch_path, final_sketch):
+    if not args.annotate_clip_score:
+        return final_sketch
+
+    try:
+        project_root = Path(__file__).resolve().parents[1]
+        if str(project_root) not in sys.path:
+            sys.path.insert(0, str(project_root))
+
+        from compute_clip_score import compute_clip_score
+
+        result = compute_clip_score(
+            image_path=Path(args.output_dir) / "input.png",
+            sketch_path=Path(sketch_path),
+            model_name=args.clip_score_model,
+            device=args.clip_score_device,
+            jit=bool(args.clip_score_jit),
+        )
+
+        clip_score = float(result["clip_score_x100"])
+        annotated = _draw_clip_score(final_sketch, clip_score)
+        annotated.save(sketch_path)
+
+        with open(Path(args.output_dir) / "clip_score.json", "w") as f:
+            json.dump(result, f, indent=2)
+
+        print(f"CLIP score: {clip_score:.4f}")
+        return annotated
+
+    except Exception as err:
+        print(f"Warning: failed to compute or annotate CLIP score: {err}")
+        return final_sketch
+
+
 
 def main(args):
     print("run object sketching", flush=True)
@@ -164,8 +243,15 @@ def main(args):
     final_sketch_num = utils.read_svg(f"{args.output_dir}/final_svg.svg", args.device, multiply=True,
                                       args=None).cpu().numpy()
     final_sketch = Image.fromarray((final_sketch_num * 255).astype('uint8'), 'RGB')
-    final_sketch.save(f"{args.output_dir}/final_sketch.png")
-    print(f"You can download the result sketch from {args.output_dir}/final_sketch.png")
+    final_sketch_path = Path(args.output_dir) / "final_sketch.png"
+    final_sketch.save(final_sketch_path)
+    final_sketch = _compute_and_annotate_clip_score(
+        args,
+        final_sketch_path,
+        final_sketch,
+    )
+
+    print(f"You can download the result sketch from {final_sketch_path}")
     if args.use_wandb:
         final_sketch = np.array(final_sketch)
         wandb.log({f"final sketch": wandb.Image(final_sketch)})

@@ -131,7 +131,16 @@ def parse_arguments():
                             help="path to python executable in sam3 conda env")
     parser.add_argument("--sam3_checkpoint_path", type=str, default="",
                             help="optional local SAM 3 checkpoint path")
-    parser.add_argument("--sam3_confidence_threshold", type=float, default=0.5)
+    parser.add_argument("--sam3_confidence_threshold", type=float, default=0.5) 
+    parser.add_argument("--annotate_clip_score", type=int, default=0,
+                    help="if 1, write the CLIP score on final_sketch.png")
+    parser.add_argument("--clip_score_model", type=str, default="ViT-B/32",
+                        help="CLIP model used by compute_clip_score")
+    parser.add_argument("--clip_score_device", type=str, default="auto",
+                        choices=["auto", "cpu", "cuda"],
+                        help="device used by compute_clip_score")
+    parser.add_argument("--clip_score_jit", type=int, default=0,
+                        help="if 1, load the CLIP score model with jit=True")
 
     # =================================
     # ============= control_net sds loss ==============
