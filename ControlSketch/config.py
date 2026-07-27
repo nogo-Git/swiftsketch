@@ -106,6 +106,8 @@ def parse_arguments():
                         help="fallback behavior if semantic initialization fails")
     parser.add_argument("--semantic_min_perimeter", type=float, default=8.0,
                         help="minimum contour perimeter used for semantic initialization")
+    parser.add_argument("--semantic_outline_overlap_tolerance", type=float, default=4.0,
+                        help="distance in pixels used to remove part-contour segments overlapping the object outline; 0 disables removal")
     parser.add_argument("--semantic_segmenter", type=str, default="sam3",
                     choices=["none", "grounded_sam", "sam3"])
     parser.add_argument("--grounding_dino_model", type=str,
@@ -127,6 +129,13 @@ def parse_arguments():
                         help="neighbor window used for discrete curvature estimation")
     parser.add_argument("--semantic_min_sampling_density", type=float, default=0.20,
                         help="minimum sampling density kept on straight contour regions")
+    parser.add_argument("--semantic_sdt_loss_weight", type=float, default=0.0)
+    parser.add_argument("--semantic_sdt_loss_margin", type=float, default=2.0)
+    parser.add_argument("--semantic_sdt_outside_margin", type=float, default=2.0)
+    parser.add_argument("--semantic_sdt_inside_margin", type=float, default=4.0)
+    parser.add_argument("--semantic_sdt_inside_weight", type=float, default=0.5)
+    parser.add_argument("--semantic_sdt_samples_per_segment", type=int, default=8)
+    parser.add_argument("--semantic_sdt_loss_ramp_iters", type=int, default=0)
     parser.add_argument("--sam3_python", type=str, default="",
                             help="path to python executable in sam3 conda env")
     parser.add_argument("--sam3_checkpoint_path", type=str, default="",

@@ -19,6 +19,7 @@ from attn_utils import (
 import semantic_init
 import semantic_segmenter
 import os
+from scipy.ndimage import distance_transform_edt
 
 
 class Painter(torch.nn.Module):
@@ -46,6 +47,8 @@ class Painter(torch.nn.Module):
         self.points_vars = []
         self.optimize_flag = []
         self.initial_points = []
+        self.semantic_stroke_parts = None
+        self.semantic_sdt_maps = {}
 
         # attention related for strokes initialisation
         self.use_init_method = args.use_init_method
@@ -138,6 +141,56 @@ class Painter(torch.nn.Module):
     def save_svg(self, output_dir, name):
         pydiffvg.save_svg('{}/{}.svg'.format(output_dir, name), self.canvas_width, self.canvas_height, self.shapes,
                           self.shape_groups)
+
+    def save_semantic_part_svg(self, output_dir, name):
+        if not self.semantic_stroke_parts:
+            return False
+
+        part_colors = {
+            "outline": [0.0, 0.0, 0.0, 1.0],
+            "eye": [0.1, 0.3, 1.0, 1.0],
+            "eyes": [0.1, 0.3, 1.0, 1.0],
+            "nose": [1.0, 0.35, 0.05, 1.0],
+            "mouth": [0.9, 0.0, 0.2, 1.0],
+            "ear": [0.0, 0.65, 0.25, 1.0],
+            "ears": [0.0, 0.65, 0.25, 1.0],
+        }
+
+        fallback_colors = [
+            [0.55, 0.20, 0.85, 1.0],
+            [0.0, 0.70, 0.80, 1.0],
+            [0.95, 0.65, 0.0, 1.0],
+            [0.75, 0.25, 0.05, 1.0],
+            [0.35, 0.55, 0.10, 1.0],
+        ]
+
+        color_index = {}
+        semantic_shape_groups = []
+
+        for i, part in enumerate(self.semantic_stroke_parts):
+            if part in part_colors:
+                color = part_colors[part]
+            else:
+                if part not in color_index:
+                    color_index[part] = len(color_index)
+                color = fallback_colors[color_index[part] % len(fallback_colors)]
+
+            semantic_shape_groups.append(
+                pydiffvg.ShapeGroup(
+                    shape_ids=torch.tensor([i]),
+                    fill_color=None,
+                    stroke_color=torch.tensor(color),
+                )
+            )
+
+        pydiffvg.save_svg(
+            "{}/{}.svg".format(output_dir, name),
+            self.canvas_width,
+            self.canvas_height,
+            self.shapes,
+            semantic_shape_groups,
+        )
+        return True
 
     def get_initial_points(self):
         return torch.tensor(self.initial_points)
@@ -369,12 +422,22 @@ class Painter(torch.nn.Module):
         # Cluster centers are the resulting equidistributed points
         points = kmeans.cluster_centers_
 
-        # Clip points to ensure they remain within the mask
+        # Clip points to the canvas first. A K-means centroid can still fall
+        # outside a non-convex region even when all assigned samples are inside.
         points = np.clip(points, [0, 0], [mask.shape[1] - 1, mask.shape[0] - 1])
 
-        # Verify points are within the mask
-        inside_mask = [mask[int(y), int(x)] > 0 for x, y in points]
-        points = points[np.array(inside_mask)]
+        # Keep exactly num_points entries. Discarding an invalid centroid here
+        # leaves fewer initial points than strokes and later makes get_path()
+        # index past the end of inds_normalised.
+        pixel_points = np.rint(points).astype(np.int64)
+        pixel_points[:, 0] = np.clip(pixel_points[:, 0], 0, mask.shape[1] - 1)
+        pixel_points[:, 1] = np.clip(pixel_points[:, 1], 0, mask.shape[0] - 1)
+        inside_mask = mask[pixel_points[:, 1], pixel_points[:, 0]] > 0
+
+        for point_index in np.flatnonzero(~inside_mask):
+            offsets = valid_coords - points[point_index]
+            nearest_index = np.argmin(np.einsum("ij,ij->i", offsets, offsets))
+            points[point_index] = valid_coords[nearest_index]
 
         return points
 
@@ -563,15 +626,18 @@ class Painter(torch.nn.Module):
                 parts_text=parts_text,
                 weights_text=weights_text,
                 part_masks=part_masks,
-                min_perimeter=getattr(self.args, "semantic_min_perimeter", 8.0),
+                min_perimeter=getattr(self.args, "semantic_min_perimeter", 8.0,),
+                outline_overlap_tolerance=getattr(self.args, "semantic_outline_overlap_tolerance", 4.0),
                 curvature_sampling=getattr(self.args, "semantic_curvature_sampling", 0) == 1,
                 curvature_weight=getattr(self.args, "semantic_curvature_weight", 2.0),
                 curvature_window=getattr(self.args, "semantic_curvature_window", 6),
                 min_sampling_density=getattr(self.args, "semantic_min_sampling_density", 0.20),
+                return_metadata=True,
             )
 
             if result is not None:
-                self.inds, self.clustered_mask_to_plot = result
+                self.inds, self.clustered_mask_to_plot, self.semantic_stroke_parts, part_masks_for_loss = result
+                self._prepare_semantic_sdt_maps(part_masks_for_loss)
             elif getattr(self.args, "semantic_fallback", "kmeans") == "kmeans":
                 self.inds, self.clustered_mask_to_plot = self.get_points_smart_clustering(mask, weights)
             else:
@@ -585,8 +651,221 @@ class Painter(torch.nn.Module):
         self.inds_normalised = self.inds_normalised.tolist()
 
         return attn_map_to_plot
-        
+    
+    def _prepare_semantic_sdt_maps(self, part_masks):
+        self.semantic_sdt_maps = {}
 
+        for part, mask in part_masks.items():
+            binary = np.asarray(mask).astype(np.uint8) > 0
+
+            outside = distance_transform_edt(~binary)
+            inside = distance_transform_edt(binary)
+            sdt = outside - inside
+
+            self.semantic_sdt_maps[part] = torch.from_numpy(sdt).float().to(self.device)
+            
+        self.save_semantic_sdt_debug()
+    
+    def save_semantic_sdt_debug(self):
+        if not self.semantic_sdt_maps:
+            return
+
+        debug_dir = os.path.join(self.args.output_dir, "semantic_sdt_debug")
+        os.makedirs(debug_dir, exist_ok=True)
+
+        outside_margin = getattr(
+            self.args,
+            "semantic_sdt_outside_margin",
+            getattr(self.args, "semantic_sdt_loss_margin", 2.0),
+        )
+        inside_margin = getattr(self.args, "semantic_sdt_inside_margin", 4.0)
+        inside_weight = getattr(self.args, "semantic_sdt_inside_weight", 0.5)
+
+        stroke_radius = float(self.width) * 0.5
+
+        for part, sdt in self.semantic_sdt_maps.items():
+            sdt_np = sdt.detach().cpu().numpy()
+
+            max_abs = np.percentile(np.abs(sdt_np), 95)
+            max_abs = max(max_abs, 1e-6)
+
+            fig, ax = plt.subplots(figsize=(6, 6))
+            im = ax.imshow(sdt_np, cmap="coolwarm", vmin=-max_abs, vmax=max_abs)
+
+            if sdt_np.min() <= 0 <= sdt_np.max():
+                ax.contour(sdt_np, levels=[0], colors="black", linewidths=1)
+
+            fig.colorbar(im, ax=ax, label="signed distance")
+            ax.set_title(f"{part} SDT")
+            ax.axis("off")
+            fig.tight_layout()
+            fig.savefig(os.path.join(debug_dir, f"{part}_sdt.png"), dpi=160)
+            plt.close(fig)
+
+            outside_penalty = np.maximum(sdt_np + stroke_radius - outside_margin, 0.0)
+            inside_penalty = np.maximum(-sdt_np - inside_margin, 0.0)
+            penalty = outside_penalty + inside_weight * inside_penalty
+
+            fig, ax = plt.subplots(figsize=(6, 6))
+            im = ax.imshow(penalty, cmap="magma")
+
+            if sdt_np.min() <= 0 <= sdt_np.max():
+                ax.contour(sdt_np, levels=[0], colors="white", linewidths=1)
+
+            fig.colorbar(im, ax=ax, label="penalty")
+            ax.set_title(f"{part} SDT penalty")
+            ax.axis("off")
+            fig.tight_layout()
+            fig.savefig(os.path.join(debug_dir, f"{part}_penalty.png"), dpi=160)
+            plt.close(fig)
+
+            grad_y, grad_x = np.gradient(sdt_np)
+            norm = np.sqrt(grad_x ** 2 + grad_y ** 2) + 1e-6
+            inward_x = -grad_x / norm
+            inward_y = -grad_y / norm
+
+            step = max(8, sdt_np.shape[0] // 32)
+            yy, xx = np.mgrid[0:sdt_np.shape[0]:step, 0:sdt_np.shape[1]:step]
+
+            plt.figure(figsize=(6, 6))
+            plt.imshow(sdt_np, cmap="coolwarm", vmin=-max_abs, vmax=max_abs)
+            plt.contour(sdt_np, levels=[0], colors="black", linewidths=1)
+            plt.quiver(
+                xx,
+                yy,
+                inward_x[::step, ::step],
+                inward_y[::step, ::step],
+                color="yellow",
+                angles="xy",
+                scale_units="xy",
+                scale=0.25,
+                width=0.003,
+            )
+            plt.title(f"{part} inward SDT gradient")
+            plt.axis("off")
+            plt.tight_layout()
+            plt.savefig(os.path.join(debug_dir, f"{part}_gradient.png"), dpi=160)
+            plt.close()
+
+
+    def _render_shape_subset_alpha(self, indices):
+        shapes = [self.shapes[i] for i in indices]
+        shape_groups = [
+            pydiffvg.ShapeGroup(
+                shape_ids=torch.tensor([j]),
+                fill_color=None,
+                stroke_color=self.shape_groups[i].stroke_color,
+            )
+            for j, i in enumerate(indices)
+        ]
+
+        scene_args = pydiffvg.RenderFunction.serialize_scene(
+            self.canvas_width,
+            self.canvas_height,
+            shapes,
+            shape_groups,
+        )
+
+        img = pydiffvg.RenderFunction.apply(
+            self.canvas_width,
+            self.canvas_height,
+            2,
+            2,
+            0,
+            None,
+            *scene_args,
+        )
+
+        return img[:, :, 3]
+
+
+    def _sample_path_points(self, path, samples_per_segment=16):
+        points = path.points
+        num_control_points = path.num_control_points.detach().cpu().tolist()
+
+        t = torch.linspace(
+            0.0,
+            1.0,
+            samples_per_segment,
+            device=points.device,
+            dtype=points.dtype,
+        )
+
+        sampled = []
+        point_offset = 0
+
+        for n_ctrl in num_control_points:
+            segment_points = points[point_offset: point_offset + n_ctrl + 2]
+
+            curve = segment_points.unsqueeze(0).expand(samples_per_segment, -1, -1)
+            for _ in range(segment_points.shape[0] - 1):
+                curve = (1.0 - t[:, None, None]) * curve[:, :-1] + t[:, None, None] * curve[:, 1:]
+
+            sampled.append(curve[:, 0])
+            point_offset += n_ctrl + 1
+
+        return torch.cat(sampled, dim=0)
+
+
+    def semantic_sdt_loss(self):
+        if not self.semantic_stroke_parts or not self.semantic_sdt_maps:
+            return torch.zeros((), device=self.device)
+
+        outside_margin = getattr(
+            self.args,
+            "semantic_sdt_outside_margin",
+            getattr(self.args, "semantic_sdt_loss_margin", 2.0),
+        )
+        inside_margin = getattr(self.args, "semantic_sdt_inside_margin", 4.0)
+        inside_weight = getattr(self.args, "semantic_sdt_inside_weight", 0.5)
+        samples_per_segment = getattr(self.args, "semantic_sdt_samples_per_segment", 8)
+
+        losses = []
+
+        for stroke_idx, part in enumerate(self.semantic_stroke_parts):
+            if part not in self.semantic_sdt_maps:
+                continue
+
+            path = self.shapes[stroke_idx]
+            sampled_points = self._sample_path_points(
+                path,
+                samples_per_segment=samples_per_segment,
+            )
+
+            sdt = self.semantic_sdt_maps[part]
+            h, w = sdt.shape
+
+            grid_x = 2.0 * sampled_points[:, 0] / max(w - 1, 1) - 1.0
+            grid_y = 2.0 * sampled_points[:, 1] / max(h - 1, 1) - 1.0
+            grid = torch.stack([grid_x, grid_y], dim=-1).view(1, -1, 1, 2)
+
+            stroke_radius = torch.as_tensor(
+                path.stroke_width,
+                device=self.device,
+                dtype=sdt.dtype,
+            ) * 0.5
+
+            outside_penalty = torch.relu(sdt + stroke_radius - outside_margin)
+            inside_penalty = torch.relu(-sdt - inside_margin)
+
+            penalty_map = outside_penalty + inside_weight * inside_penalty
+            penalty_map = penalty_map / max(self.canvas_width, self.canvas_height)
+
+            values = F.grid_sample(
+                penalty_map.view(1, 1, h, w),
+                grid,
+                mode="bilinear",
+                padding_mode="border",
+                align_corners=True,
+            ).view(-1)
+
+            losses.append(values.mean())
+
+        if not losses:
+            return torch.zeros((), device=self.device)
+
+        return torch.stack(losses).mean()
+        
     def get_attn(self):
         return self.attention_map
     

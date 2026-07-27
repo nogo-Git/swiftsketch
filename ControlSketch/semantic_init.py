@@ -116,6 +116,132 @@ def _contour_perimeter(points: np.ndarray) -> float:
     return float(distances.sum())
 
 
+def _polyline_length(points: np.ndarray, closed: bool) -> float:
+    if len(points) < 2:
+        return 0.0
+
+    if closed:
+        points = np.vstack([points, points[0]])
+
+    return float(np.linalg.norm(points[1:] - points[:-1], axis=1).sum())
+
+
+def _sample_open_contour(points: np.ndarray, num_points: int) -> np.ndarray:
+    """開いた輪郭を弧長に沿って等間隔にサンプリングする。"""
+    if num_points <= 0 or len(points) == 0:
+        return np.zeros((0, 2), dtype=np.float32)
+
+    if len(points) == 1:
+        return np.repeat(points.astype(np.float32), num_points, axis=0)
+
+    starts = points[:-1]
+    vectors = points[1:] - points[:-1]
+    lengths = np.linalg.norm(vectors, axis=1)
+
+    valid = lengths > 1e-6
+    starts = starts[valid]
+    vectors = vectors[valid]
+    lengths = lengths[valid]
+
+    if len(lengths) == 0:
+        return np.repeat(points[:1].astype(np.float32), num_points, axis=0)
+
+    total_length = float(lengths.sum())
+
+    if num_points == 1:
+        samples = np.array([total_length / 2.0], dtype=np.float32)
+    else:
+        samples = np.linspace(
+            0.0,
+            total_length,
+            num_points,
+            endpoint=True,
+            dtype=np.float32,
+        )
+
+    cumulative = np.cumsum(lengths)
+    segment_indices = np.searchsorted(cumulative, samples, side="right")
+    segment_indices = np.clip(segment_indices, 0, len(lengths) - 1)
+
+    previous = np.concatenate([[0.0], cumulative[:-1]])
+    local = samples - previous[segment_indices]
+    ratio = local / lengths[segment_indices]
+
+    sampled = (
+        starts[segment_indices]
+        + vectors[segment_indices] * ratio[:, None]
+    )
+    return sampled.astype(np.float32)
+
+
+def _split_contour_by_keep_mask(
+    points: np.ndarray,
+    keep_mask: np.ndarray,
+) -> List[np.ndarray]:
+    """
+    閉じた輪郭からkeep_mask=Trueの連続区間を取り出す。
+
+    最初と最後が同じ区間に属する場合も、輪郭が循環していることを
+    考慮して正しくまとめる。
+    """
+    points = np.asarray(points, dtype=np.float32)
+    keep_mask = np.asarray(keep_mask, dtype=bool)
+
+    if len(points) == 0 or not np.any(keep_mask):
+        return []
+
+    if np.all(keep_mask):
+        return [points]
+
+    # Falseの直後から始めることで、配列の先頭と末尾をまたぐ
+    # True区間が分断されることを防ぐ。
+    false_index = int(np.flatnonzero(~keep_mask)[0])
+    start_index = (false_index + 1) % len(points)
+
+    points = np.roll(points, -start_index, axis=0)
+    keep_mask = np.roll(keep_mask, -start_index)
+
+    runs = []
+    run_start = None
+
+    for index, keep in enumerate(keep_mask):
+        if keep and run_start is None:
+            run_start = index
+        elif not keep and run_start is not None:
+            runs.append(points[run_start:index])
+            run_start = None
+
+    if run_start is not None:
+        runs.append(points[run_start:])
+
+    return [run for run in runs if len(run) >= 2]
+
+
+def _make_outline_distance_map(foreground_mask: np.ndarray) -> np.ndarray:
+    """各画素から概形輪郭までの距離を計算する。"""
+    kernel = np.ones((3, 3), dtype=np.uint8)
+
+    eroded = cv2.erode(
+        foreground_mask.astype(np.uint8),
+        kernel,
+        iterations=1,
+    )
+
+    # オブジェクトの内側にある1画素幅の概形輪郭
+    outline_boundary = (
+        foreground_mask.astype(np.uint8) - eroded
+    ) > 0
+
+    # distanceTransformは0画素までの距離を返す。
+    distance_input = (~outline_boundary).astype(np.uint8)
+
+    return cv2.distanceTransform(
+        distance_input,
+        cv2.DIST_L2,
+        5,
+    )
+
+
 def _find_contours(binary_mask: np.ndarray, min_perimeter: float) -> List[np.ndarray]:
     contours, _ = cv2.findContours(
         binary_mask.astype(np.uint8),
@@ -194,7 +320,13 @@ def _make_visualization(
         color = palette[index % len(palette)]
         contour = np.round(region["contour"]).astype(np.int32).reshape(-1, 1, 2)
         thickness = 2 if allocations[index] > 0 else 1
-        cv2.drawContours(vis, [contour], -1, color, thickness)
+        cv2.polylines(
+            vis,
+            [contour],
+            isClosed=region.get("closed", True),
+            color=color,
+            thickness=thickness,
+        )
 
     return vis
 
@@ -208,18 +340,23 @@ def build_semantic_initial_points(
     weights_text: str,
     part_masks: Optional[Dict[str, object]] = None,
     min_perimeter: float = 8.0,
+    outline_overlap_tolerance: float = 4.0,
     curvature_sampling: bool = False,
     curvature_weight: float = 2.0,
     curvature_window: int = 6,
     min_sampling_density: float = 0.20,
+    return_metadata: bool = False,
 ) -> Optional[Tuple[np.ndarray, np.ndarray]]:
     target_size = (canvas_height, canvas_width)
     foreground_mask = _mask_to_numpy(mask, target_size)
+    
+    outline_distance = _make_outline_distance_map(foreground_mask)
 
     parts = parse_semantic_parts(parts_text)
     weights = parse_semantic_weights(weights_text, parts)
 
     regions = []
+    part_masks_for_loss = {}
 
     for part in parts:
         if part == "outline":
@@ -233,18 +370,58 @@ def build_semantic_initial_points(
                 "Only 'outline' is supported before semantic segmenter integration."
             )
             continue
-
+        
+        part_masks_for_loss[part] = part_binary
         contours = _find_contours(part_binary, min_perimeter)
+        weight = weights.get(part, 1.0)
+
         for contour in contours:
-            perimeter = _contour_perimeter(contour)
-            weight = weights.get(part, 1.0)
-            regions.append({
-                "part": part,
-                "contour": contour,
-                "perimeter": perimeter,
-                "weight": weight,
-                "score": perimeter * weight,
-            })
+            if part == "outline" or outline_overlap_tolerance <= 0:
+                # 概形輪郭はそのまま閉曲線として登録する。
+                candidate_contours = [(contour, True)]
+            else:
+                rounded = np.round(contour).astype(np.int32)
+
+                xs = np.clip(
+                    rounded[:, 0],
+                    0,
+                    canvas_width - 1,
+                )
+                ys = np.clip(
+                    rounded[:, 1],
+                    0,
+                    canvas_height - 1,
+                )
+
+                distances = outline_distance[ys, xs]
+
+                # 概形輪郭から指定距離より離れた部分だけを残す。
+                keep_mask = distances > outline_overlap_tolerance
+
+                open_contours = _split_contour_by_keep_mask(
+                    contour,
+                    keep_mask,
+                )
+                candidate_contours = [
+                    (open_contour, False)
+                    for open_contour in open_contours
+                ]
+
+            for candidate, is_closed in candidate_contours:
+                length = _polyline_length(candidate, closed=is_closed)
+
+                # 重複排除によって生じた短い断片を除外する。
+                if length < min_perimeter:
+                    continue
+
+                regions.append({
+                    "part": part,
+                    "contour": candidate,
+                    "closed": is_closed,
+                    "perimeter": length,
+                    "weight": weight,
+                    "score": length * weight,
+                })
 
     if not regions:
         return None
@@ -253,19 +430,37 @@ def build_semantic_initial_points(
     allocations = allocate_points_by_score(scores, total_points)
 
     sampled_points = []
+    sampled_parts = []
+
     for region, num_region_points in zip(regions, allocations):
-        if curvature_sampling:
-            sampled = _sample_closed_contour_curvature_weighted(
-                region["contour"],
-                int(num_region_points),
-                curvature_weight=curvature_weight,
-                curvature_window=curvature_window,
-                min_density=min_sampling_density,
-            )
+        num_region_points = int(num_region_points)
+
+        if region["closed"]:
+            if curvature_sampling:
+                sampled = _sample_closed_contour_curvature_weighted(
+                    region["contour"],
+                    num_region_points,
+                    curvature_weight=curvature_weight,
+                    curvature_window=curvature_window,
+                    min_density=min_sampling_density,
+                )
+            else:
+                sampled = _sample_closed_contour(
+                    region["contour"],
+                    num_region_points,
+                )
         else:
-            sampled = _sample_closed_contour(region["contour"], int(num_region_points))
+            # 重複排除後の部位輪郭は開曲線になる。
+            sampled = _sample_open_contour(
+                region["contour"],
+                num_region_points,
+            )
+
         if len(sampled) > 0:
             sampled_points.append(sampled)
+            sampled_parts.extend(
+                [region["part"]] * len(sampled)
+            )
 
     if not sampled_points:
         return None
@@ -276,6 +471,10 @@ def build_semantic_initial_points(
         points = points[:total_points]
 
     vis = _make_visualization(foreground_mask, regions, allocations)
+
+    if return_metadata:
+        return points, vis, sampled_parts, part_masks_for_loss
+
     return points, vis
 
 def _discrete_curvature(points: np.ndarray, window: int = 6) -> np.ndarray:

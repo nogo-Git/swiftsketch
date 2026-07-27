@@ -421,6 +421,13 @@ def sort_by_contour_and_attn(renderer, mask, attn_map):
         final_sorted_strokes = sorted_non_zero_intersection_strokes + sorted_zero_intersection_strokes
 
         sorted_indices = [i for i, _ in final_sorted_strokes]
+        
+        if getattr(renderer, "semantic_stroke_parts", None) is not None:
+            renderer.semantic_stroke_parts = [
+                renderer.semantic_stroke_parts[i]
+                for i in sorted_indices
+            ]
+        
         sorted_shapes = []
         sorted_shape_groups = []
         for j in sorted_indices:

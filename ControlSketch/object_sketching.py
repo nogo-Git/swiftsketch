@@ -205,8 +205,17 @@ def main(args):
     inputs = inputs.detach()
     for epoch in epoch_range:
         optimizer.zero_grad_()
-        sketches = renderer.get_image().to(args.device)  
+        sketches = renderer.get_image().to(args.device)
         loss = sds_loss(sketches)
+
+        sdt_weight = getattr(args, "semantic_sdt_loss_weight", 0.0)
+        if sdt_weight > 0:
+            ramp_iters = getattr(args, "semantic_sdt_loss_ramp_iters", 0)
+            if ramp_iters > 0:
+                sdt_weight *= min(1.0, epoch / float(ramp_iters))
+
+            loss = loss + sdt_weight * renderer.semantic_sdt_loss()
+
         loss.backward()
         optimizer.step_()
 
@@ -214,6 +223,8 @@ def main(args):
         if epoch % args.save_interval == 0:  # save current sketch
             renderer.save_svg(
                 f"{args.output_dir}/svg_logs", f"svg_iter{epoch}")
+            renderer.save_semantic_part_svg(
+                f"{args.output_dir}/svg_logs", f"svg_iter{epoch}_semantic_parts")
             if not os.path.exists(f"{args.output_dir}/svg_to_png"):
                 os.mkdir(f"{args.output_dir}/svg_to_png")
             path_svg = f"{args.output_dir}/svg_logs/svg_iter{epoch}.svg"
@@ -240,6 +251,7 @@ def main(args):
     if args.output_svg_size!=512:
         utils.resize_svg(renderer, args.output_svg_size, args.output_svg_size)
     renderer.save_svg(args.output_dir, "final_svg")
+    renderer.save_semantic_part_svg(args.output_dir, "final_svg_semantic_parts")
     final_sketch_num = utils.read_svg(f"{args.output_dir}/final_svg.svg", args.device, multiply=True,
                                       args=None).cpu().numpy()
     final_sketch = Image.fromarray((final_sketch_num * 255).astype('uint8'), 'RGB')
