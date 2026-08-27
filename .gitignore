@@ -23,3 +23,30 @@ preview
 *.tmp
 tmp
 plan/
+
+# Experiment tracking
+wandb/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Python environments and caches
+.venv/
+venv/
+.env
+.env.*
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Generated checkpoints
+*.ckpt
+*.safetensors
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Project logs
+/logs/

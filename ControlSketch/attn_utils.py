@@ -302,7 +302,7 @@ def prompt2tokens(tokenizer, prompt):
     text_input_ids = text_inputs.input_ids
     tokens = []
     for text_input_id in text_input_ids[0]:
-        token = tokenizer.decoder[text_input_id.item()]
+        token = tokenizer.convert_ids_to_tokens(text_input_id.item())
         tokens.append(token)
     return tokens
 

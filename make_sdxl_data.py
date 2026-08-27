@@ -7,10 +7,15 @@ import cv2
 from transformers import Blip2Processor, Blip2ForConditionalGeneration
 import torch
 from diffusers import AutoPipelineForText2Image
-from transformers import AutoModelForImageSegmentation
+from transformers import AutoModelForImageSegmentation, PreTrainedModel
 from torchvision.transforms.functional import normalize
 import torch.nn.functional as F
 import io
+
+# RMBG-1.4 does not call post_init(), which transformers 5 uses to create
+# this mapping. RMBG has no tied weights, so an empty fallback is correct.
+if not hasattr(PreTrainedModel, "all_tied_weights_keys"):
+    PreTrainedModel.all_tied_weights_keys = {}
 
 from ControlSketch.attn_utils import (
     cross_attn_init,
@@ -144,12 +149,19 @@ def count_objects_from_tensor(image_tensor: torch.Tensor) -> int:
 
 
 def get_seed_and_counter(directory):
-    files = [f for f in os.listdir(directory) if f.endswith('.npy')]
-    file_count = len(files)
-    if file_count == 0:
+    files = [
+        f for f in os.listdir(directory)
+        if f.endswith((".npy", ".npz"))
+    ]
+    seed_numbers = []
+    for filename in files:
+        try:
+            seed_numbers.append(int(os.path.splitext(filename)[0].split("_")[-1]))
+        except ValueError:
+            continue
+    if not seed_numbers:
         return 0, 0
-    highest_number = max(int(f.split('_')[-1][:-4]) for f in files)
-    return highest_number, file_count
+    return max(seed_numbers) + 1, len(seed_numbers)
 
 
 def get_obj_bb(binary_im):
@@ -162,12 +174,15 @@ def get_obj_bb(binary_im):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--obj", type=str, help="object to generate")
+    parser.add_argument("--obj", type=str, nargs="+", required=True,
+                        help="one or more objects to generate")
     # parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output_dir", type=str, default="",
                         help="directory to save the output dictionaries")
     parser.add_argument("--num_of_samples", type=int, default=1,
-                        help="number of data samples to create for the given object")
+                        help="number of new data samples to create for each object")
+    parser.add_argument("--target_total", type=int, default=None,
+                        help="generate until each object directory contains this many samples")
     parser.add_argument("--save_compressed_dict", type=int, default=1, help="if 1 save compressed dictionary")
     args = parser.parse_args()
     print("Loading models", flush=True)
@@ -185,7 +200,7 @@ if __name__ == "__main__":
     #     "elephant", "lion", "horse"    
     # ]
 
-    subjects = [args.obj]
+    subjects = args.obj
 
     if args.output_dir=="":
         abs_path = os.path.abspath(os.getcwd())
@@ -195,9 +210,17 @@ if __name__ == "__main__":
         out_dir = f'{args.output_dir}/{obj}'
         print(f"Generating data for {obj}", flush=True)
         os.makedirs(out_dir, exist_ok=True)
-        current_seed, counter = get_seed_and_counter(out_dir)
-        counter= 0 
-        while counter < args.num_of_samples:
+        current_seed, existing_count = get_seed_and_counter(out_dir)
+        samples_to_create = args.num_of_samples
+        if args.target_total is not None:
+            samples_to_create = max(0, args.target_total - existing_count)
+        print(
+            f"Found {existing_count} existing samples; "
+            f"creating {samples_to_create} samples starting from seed {current_seed}",
+            flush=True,
+        )
+        counter = 0
+        while counter < samples_to_create:
             seed = current_seed
             generator = torch.Generator(device='cuda').manual_seed(seed)
             prompt = f"A highly detailed wide shot image of one {obj}, set against a plain mesmerizing background. center"

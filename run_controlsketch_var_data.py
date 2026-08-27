@@ -33,7 +33,28 @@ def has_svg_key(npz_path, stroke_count):
         return False
 
 
-def collect_targets(input_root, categories):
+def parse_min_seeds(values):
+    min_seeds = {}
+    for value in values:
+        try:
+            category, seed = value.split("=", 1)
+            min_seeds[category] = int(seed)
+        except ValueError as exc:
+            raise ValueError(
+                f"invalid --min_seed_by_category value {value!r}; "
+                "expected CATEGORY=SEED"
+            ) from exc
+    return min_seeds
+
+
+def sample_seed(npz_path):
+    try:
+        return int(npz_path.stem.rsplit("_", 1)[1])
+    except (IndexError, ValueError):
+        return None
+
+
+def collect_targets(input_root, categories, min_seeds):
     targets = []
     for category in categories:
         category_dir = input_root / category
@@ -41,8 +62,22 @@ def collect_targets(input_root, categories):
             print(f"[warn] missing category directory: {category_dir}", flush=True)
             continue
         for npz_path in sorted(category_dir.glob("*.npz")):
+            minimum_seed = min_seeds.get(category)
+            if minimum_seed is not None:
+                seed = sample_seed(npz_path)
+                if seed is None:
+                    print(f"[warn] could not parse seed from {npz_path}", flush=True)
+                    continue
+                if seed < minimum_seed:
+                    continue
             targets.append((category, npz_path))
     return targets
+
+
+def has_completed_output(output_dir, target_path, stroke_count):
+    stem = target_path.stem
+    final_svg = output_dir / stem / f"{stem}_{stroke_count}_strokes" / "final_svg.svg"
+    return final_svg.is_file()
 
 
 def build_command(args, target_path, category, stroke_count):
@@ -111,6 +146,13 @@ def main():
         default=DEFAULT_STROKES,
         help="Stroke counts to generate for each sample.",
     )
+    parser.add_argument(
+        "--min_seed_by_category",
+        nargs="*",
+        default=(),
+        metavar="CATEGORY=SEED",
+        help="Only process samples at or above each category's minimum seed.",
+    )
     parser.add_argument("--num_iter", type=int, default=2000)
     parser.add_argument("--save_interval", type=int, default=100)
     parser.add_argument("--condition", default="depth")
@@ -152,7 +194,12 @@ def main():
     args.output_dir = (args.repo_root / args.output_dir).resolve()
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    targets = collect_targets(args.input_root, args.categories)
+    try:
+        min_seeds = parse_min_seeds(args.min_seed_by_category)
+    except ValueError as exc:
+        parser.error(str(exc))
+
+    targets = collect_targets(args.input_root, args.categories, min_seeds)
     if not targets:
         print(f"No .npz files found under {args.input_root}", flush=True)
         return 1
@@ -161,7 +208,10 @@ def main():
     skipped = 0
     for category, target_path in targets:
         for stroke_count in args.strokes:
-            if not args.rerun_existing and has_svg_key(target_path, stroke_count):
+            if not args.rerun_existing and (
+                has_svg_key(target_path, stroke_count)
+                or has_completed_output(args.output_dir, target_path, stroke_count)
+            ):
                 skipped += 1
                 continue
             jobs.append((category, target_path, stroke_count))
