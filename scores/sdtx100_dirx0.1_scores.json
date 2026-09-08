@@ -1,0 +1,1473 @@
+{
+  "metadata": {
+    "input_root": "SDXL_samples",
+    "sketch_root": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1",
+    "sketch_glob": "*/*/*_strokes/final_sketch.png",
+    "metrics": [
+      "dreamsim",
+      "ms-ssim"
+    ],
+    "requested_device": "cuda",
+    "batch_size": 16,
+    "progress_enabled": true,
+    "score_directions": {
+      "dreamsim_distance": "lower_is_better",
+      "ms_ssim": "higher_is_better"
+    },
+    "dreamsim": {
+      "model_type": "ensemble",
+      "score_definition": "1 - cosine_similarity(normalized_embeddings)",
+      "reference_preprocessing": "DreamSIM official RGB preprocessing",
+      "sketch_preprocessing": "RGB composited on white, then DreamSIM preprocessing"
+    },
+    "ms_ssim": {
+      "implementation": "pytorch-msssim",
+      "data_range": 1.0,
+      "channels": 1,
+      "image_size": 256,
+      "resize_mode": "stretch",
+      "reference_preprocessing": "grayscale XDoG edge map",
+      "sketch_preprocessing": "grayscale composited on white",
+      "xdog": {
+        "sigma": 0.5,
+        "k": 10.0,
+        "gamma": 0.98,
+        "epsilon": -0.1,
+        "phi": 200.0
+      }
+    },
+    "resolved_devices": {
+      "dreamsim": "cuda",
+      "ms-ssim": "cuda"
+    }
+  },
+  "summary": {
+    "num_scored": 150,
+    "mean_dreamsim_distance": 0.6106796422600747,
+    "mean_ms_ssim": 0.5956279063224792,
+    "by_category": {
+      "airplane": {
+        "count": 15,
+        "mean_dreamsim_distance": 0.5656095147132874,
+        "mean_ms_ssim": 0.6969279090563456
+      },
+      "bicycle": {
+        "count": 15,
+        "mean_dreamsim_distance": 0.40585565368334453,
+        "mean_ms_ssim": 0.6675900439421336
+      },
+      "elephant": {
+        "count": 15,
+        "mean_dreamsim_distance": 0.6421155522267024,
+        "mean_ms_ssim": 0.5202910919984182
+      },
+      "fish": {
+        "count": 15,
+        "mean_dreamsim_distance": 0.6715646515289942,
+        "mean_ms_ssim": 0.5774142344792684
+      },
+      "flower": {
+        "count": 15,
+        "mean_dreamsim_distance": 0.7215193013350168,
+        "mean_ms_ssim": 0.46159334580103556
+      },
+      "guitar": {
+        "count": 15,
+        "mean_dreamsim_distance": 0.5872195512056351,
+        "mean_ms_ssim": 0.6382027784983317
+      },
+      "horse": {
+        "count": 15,
+        "mean_dreamsim_distance": 0.605213322242101,
+        "mean_ms_ssim": 0.6360193490982056
+      },
+      "house": {
+        "count": 15,
+        "mean_dreamsim_distance": 0.7377663711706798,
+        "mean_ms_ssim": 0.4812276800473531
+      },
+      "rabbit": {
+        "count": 15,
+        "mean_dreamsim_distance": 0.5908011515935262,
+        "mean_ms_ssim": 0.6399086475372314
+      },
+      "teapot": {
+        "count": 15,
+        "mean_dreamsim_distance": 0.5791313529014588,
+        "mean_ms_ssim": 0.6371039827664693
+      }
+    },
+    "by_num_strokes": {
+      "16": {
+        "count": 50,
+        "mean_dreamsim_distance": 0.6526229104399681,
+        "mean_ms_ssim": 0.5540836346149445
+      },
+      "24": {
+        "count": 50,
+        "mean_dreamsim_distance": 0.6056604504585266,
+        "mean_ms_ssim": 0.6035874891281128
+      },
+      "32": {
+        "count": 50,
+        "mean_dreamsim_distance": 0.5737555658817292,
+        "mean_ms_ssim": 0.6292125952243804
+      }
+    },
+    "num_discovery_errors": 0,
+    "num_sketches_found": 150
+  },
+  "results": [
+    {
+      "category": "airplane",
+      "run": "airplane_0_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_0/airplane_0_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_0/airplane_0_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6028876900672913,
+      "ms_ssim": 0.7009985446929932
+    },
+    {
+      "category": "airplane",
+      "run": "airplane_0_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_0/airplane_0_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_0/airplane_0_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5612469017505646,
+      "ms_ssim": 0.7172542214393616
+    },
+    {
+      "category": "airplane",
+      "run": "airplane_0_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_0/airplane_0_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_0/airplane_0_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5241925120353699,
+      "ms_ssim": 0.7479732036590576
+    },
+    {
+      "category": "airplane",
+      "run": "airplane_3_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_3/airplane_3_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_3/airplane_3_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7599480152130127,
+      "ms_ssim": 0.43169718980789185
+    },
+    {
+      "category": "airplane",
+      "run": "airplane_3_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_3/airplane_3_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_3/airplane_3_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7210696935653687,
+      "ms_ssim": 0.5185725092887878
+    },
+    {
+      "category": "airplane",
+      "run": "airplane_3_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_3/airplane_3_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_3/airplane_3_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5995105504989624,
+      "ms_ssim": 0.5993762612342834
+    },
+    {
+      "category": "airplane",
+      "run": "airplane_4_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_4/airplane_4_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_4/airplane_4_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7199894785881042,
+      "ms_ssim": 0.5146277546882629
+    },
+    {
+      "category": "airplane",
+      "run": "airplane_4_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_4/airplane_4_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_4/airplane_4_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6446130275726318,
+      "ms_ssim": 0.5190372467041016
+    },
+    {
+      "category": "airplane",
+      "run": "airplane_4_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_4/airplane_4_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_4/airplane_4_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6259481608867645,
+      "ms_ssim": 0.5542475581169128
+    },
+    {
+      "category": "airplane",
+      "run": "airplane_5_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_5/airplane_5_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_5/airplane_5_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6056296825408936,
+      "ms_ssim": 0.8413694500923157
+    },
+    {
+      "category": "airplane",
+      "run": "airplane_5_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_5/airplane_5_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_5/airplane_5_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.4393931031227112,
+      "ms_ssim": 0.8733303546905518
+    },
+    {
+      "category": "airplane",
+      "run": "airplane_5_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_5/airplane_5_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_5/airplane_5_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.4925546646118164,
+      "ms_ssim": 0.871237576007843
+    },
+    {
+      "category": "airplane",
+      "run": "airplane_7_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_7/airplane_7_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_7/airplane_7_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.43261897563934326,
+      "ms_ssim": 0.8062647581100464
+    },
+    {
+      "category": "airplane",
+      "run": "airplane_7_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_7/airplane_7_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_7/airplane_7_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.39947229623794556,
+      "ms_ssim": 0.8779460191726685
+    },
+    {
+      "category": "airplane",
+      "run": "airplane_7_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_7/airplane_7_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/airplane/airplane_7/airplane_7_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.3550679683685303,
+      "ms_ssim": 0.8799859881401062
+    },
+    {
+      "category": "bicycle",
+      "run": "bicycle_1_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_1/bicycle_1_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_1/bicycle_1_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6731843948364258,
+      "ms_ssim": 0.3841911554336548
+    },
+    {
+      "category": "bicycle",
+      "run": "bicycle_1_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_1/bicycle_1_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_1/bicycle_1_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5358386039733887,
+      "ms_ssim": 0.4635242521762848
+    },
+    {
+      "category": "bicycle",
+      "run": "bicycle_1_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_1/bicycle_1_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_1/bicycle_1_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.501352459192276,
+      "ms_ssim": 0.5310425162315369
+    },
+    {
+      "category": "bicycle",
+      "run": "bicycle_10_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_10/bicycle_10_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_10/bicycle_10_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5701751708984375,
+      "ms_ssim": 0.39971211552619934
+    },
+    {
+      "category": "bicycle",
+      "run": "bicycle_10_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_10/bicycle_10_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_10/bicycle_10_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.49731290340423584,
+      "ms_ssim": 0.4831896722316742
+    },
+    {
+      "category": "bicycle",
+      "run": "bicycle_10_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_10/bicycle_10_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_10/bicycle_10_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.44011831283569336,
+      "ms_ssim": 0.5083655118942261
+    },
+    {
+      "category": "bicycle",
+      "run": "bicycle_2_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_2/bicycle_2_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_2/bicycle_2_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.3558650016784668,
+      "ms_ssim": 0.7887590527534485
+    },
+    {
+      "category": "bicycle",
+      "run": "bicycle_2_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_2/bicycle_2_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_2/bicycle_2_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.319244921207428,
+      "ms_ssim": 0.8213686347007751
+    },
+    {
+      "category": "bicycle",
+      "run": "bicycle_2_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_2/bicycle_2_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_2/bicycle_2_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.2677125930786133,
+      "ms_ssim": 0.8592555522918701
+    },
+    {
+      "category": "bicycle",
+      "run": "bicycle_4_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_4/bicycle_4_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_4/bicycle_4_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.36590075492858887,
+      "ms_ssim": 0.7299527525901794
+    },
+    {
+      "category": "bicycle",
+      "run": "bicycle_4_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_4/bicycle_4_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_4/bicycle_4_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.40226149559020996,
+      "ms_ssim": 0.7825263142585754
+    },
+    {
+      "category": "bicycle",
+      "run": "bicycle_4_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_4/bicycle_4_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_4/bicycle_4_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.2869589328765869,
+      "ms_ssim": 0.8428540229797363
+    },
+    {
+      "category": "bicycle",
+      "run": "bicycle_7_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_7/bicycle_7_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_7/bicycle_7_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.27642273902893066,
+      "ms_ssim": 0.7474848031997681
+    },
+    {
+      "category": "bicycle",
+      "run": "bicycle_7_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_7/bicycle_7_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_7/bicycle_7_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.31295061111450195,
+      "ms_ssim": 0.8363918662071228
+    },
+    {
+      "category": "bicycle",
+      "run": "bicycle_7_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_7/bicycle_7_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/bicycle/bicycle_7/bicycle_7_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.2825359106063843,
+      "ms_ssim": 0.8352324366569519
+    },
+    {
+      "category": "elephant",
+      "run": "elephant_0_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_0/elephant_0_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_0/elephant_0_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6549881100654602,
+      "ms_ssim": 0.2792603373527527
+    },
+    {
+      "category": "elephant",
+      "run": "elephant_0_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_0/elephant_0_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_0/elephant_0_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7210275828838348,
+      "ms_ssim": 0.3900228440761566
+    },
+    {
+      "category": "elephant",
+      "run": "elephant_0_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_0/elephant_0_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_0/elephant_0_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6435196399688721,
+      "ms_ssim": 0.4230181872844696
+    },
+    {
+      "category": "elephant",
+      "run": "elephant_2_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_2/elephant_2_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_2/elephant_2_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7727059572935104,
+      "ms_ssim": 0.44893431663513184
+    },
+    {
+      "category": "elephant",
+      "run": "elephant_2_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_2/elephant_2_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_2/elephant_2_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.625715583562851,
+      "ms_ssim": 0.551112174987793
+    },
+    {
+      "category": "elephant",
+      "run": "elephant_2_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_2/elephant_2_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_2/elephant_2_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6167487502098083,
+      "ms_ssim": 0.5570013523101807
+    },
+    {
+      "category": "elephant",
+      "run": "elephant_3_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_3/elephant_3_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_3/elephant_3_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6503944993019104,
+      "ms_ssim": 0.6015211343765259
+    },
+    {
+      "category": "elephant",
+      "run": "elephant_3_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_3/elephant_3_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_3/elephant_3_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5254920125007629,
+      "ms_ssim": 0.6675149202346802
+    },
+    {
+      "category": "elephant",
+      "run": "elephant_3_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_3/elephant_3_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_3/elephant_3_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5411803722381592,
+      "ms_ssim": 0.7058243751525879
+    },
+    {
+      "category": "elephant",
+      "run": "elephant_4_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_4/elephant_4_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_4/elephant_4_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6634427309036255,
+      "ms_ssim": 0.5507842898368835
+    },
+    {
+      "category": "elephant",
+      "run": "elephant_4_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_4/elephant_4_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_4/elephant_4_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6474708318710327,
+      "ms_ssim": 0.5824902057647705
+    },
+    {
+      "category": "elephant",
+      "run": "elephant_4_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_4/elephant_4_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_4/elephant_4_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6106589734554291,
+      "ms_ssim": 0.5672497749328613
+    },
+    {
+      "category": "elephant",
+      "run": "elephant_5_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_5/elephant_5_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_5/elephant_5_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7201445996761322,
+      "ms_ssim": 0.44237062335014343
+    },
+    {
+      "category": "elephant",
+      "run": "elephant_5_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_5/elephant_5_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_5/elephant_5_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.595255970954895,
+      "ms_ssim": 0.5244350433349609
+    },
+    {
+      "category": "elephant",
+      "run": "elephant_5_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_5/elephant_5_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/elephant/elephant_5/elephant_5_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6429876685142517,
+      "ms_ssim": 0.5128268003463745
+    },
+    {
+      "category": "fish",
+      "run": "fish_10_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_10/fish_10_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_10/fish_10_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.8380265086889267,
+      "ms_ssim": 0.5138140320777893
+    },
+    {
+      "category": "fish",
+      "run": "fish_10_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_10/fish_10_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_10/fish_10_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6819647550582886,
+      "ms_ssim": 0.5427466034889221
+    },
+    {
+      "category": "fish",
+      "run": "fish_10_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_10/fish_10_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_10/fish_10_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.65749192237854,
+      "ms_ssim": 0.5651235580444336
+    },
+    {
+      "category": "fish",
+      "run": "fish_12_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_12/fish_12_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_12/fish_12_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7691039741039276,
+      "ms_ssim": 0.6055961847305298
+    },
+    {
+      "category": "fish",
+      "run": "fish_12_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_12/fish_12_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_12/fish_12_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7343299388885498,
+      "ms_ssim": 0.5966329574584961
+    },
+    {
+      "category": "fish",
+      "run": "fish_12_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_12/fish_12_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_12/fish_12_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6350187063217163,
+      "ms_ssim": 0.6902806758880615
+    },
+    {
+      "category": "fish",
+      "run": "fish_13_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_13/fish_13_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_13/fish_13_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.688798576593399,
+      "ms_ssim": 0.5361518859863281
+    },
+    {
+      "category": "fish",
+      "run": "fish_13_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_13/fish_13_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_13/fish_13_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6296910047531128,
+      "ms_ssim": 0.5542566776275635
+    },
+    {
+      "category": "fish",
+      "run": "fish_13_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_13/fish_13_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_13/fish_13_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6188223958015442,
+      "ms_ssim": 0.5287682414054871
+    },
+    {
+      "category": "fish",
+      "run": "fish_5_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_5/fish_5_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_5/fish_5_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7061412632465363,
+      "ms_ssim": 0.5888480544090271
+    },
+    {
+      "category": "fish",
+      "run": "fish_5_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_5/fish_5_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_5/fish_5_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6640802621841431,
+      "ms_ssim": 0.5769143104553223
+    },
+    {
+      "category": "fish",
+      "run": "fish_5_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_5/fish_5_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_5/fish_5_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5656635165214539,
+      "ms_ssim": 0.7312931418418884
+    },
+    {
+      "category": "fish",
+      "run": "fish_9_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_9/fish_9_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_9/fish_9_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6471943259239197,
+      "ms_ssim": 0.4774758219718933
+    },
+    {
+      "category": "fish",
+      "run": "fish_9_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_9/fish_9_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_9/fish_9_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6201772391796112,
+      "ms_ssim": 0.5783836245536804
+    },
+    {
+      "category": "fish",
+      "run": "fish_9_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_9/fish_9_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/fish/fish_9/fish_9_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6169653832912445,
+      "ms_ssim": 0.5749277472496033
+    },
+    {
+      "category": "flower",
+      "run": "flower_0_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_0/flower_0_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_0/flower_0_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.764110878109932,
+      "ms_ssim": 0.2996878921985626
+    },
+    {
+      "category": "flower",
+      "run": "flower_0_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_0/flower_0_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_0/flower_0_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7328362464904785,
+      "ms_ssim": 0.3628687560558319
+    },
+    {
+      "category": "flower",
+      "run": "flower_0_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_0/flower_0_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_0/flower_0_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7218868732452393,
+      "ms_ssim": 0.41633254289627075
+    },
+    {
+      "category": "flower",
+      "run": "flower_1_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_1/flower_1_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_1/flower_1_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7444523572921753,
+      "ms_ssim": 0.4902137815952301
+    },
+    {
+      "category": "flower",
+      "run": "flower_1_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_1/flower_1_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_1/flower_1_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6923288404941559,
+      "ms_ssim": 0.4773331880569458
+    },
+    {
+      "category": "flower",
+      "run": "flower_1_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_1/flower_1_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_1/flower_1_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6819785833358765,
+      "ms_ssim": 0.5391108393669128
+    },
+    {
+      "category": "flower",
+      "run": "flower_5_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_5/flower_5_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_5/flower_5_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7955024242401123,
+      "ms_ssim": 0.3781055212020874
+    },
+    {
+      "category": "flower",
+      "run": "flower_5_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_5/flower_5_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_5/flower_5_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7805387824773788,
+      "ms_ssim": 0.4451006054878235
+    },
+    {
+      "category": "flower",
+      "run": "flower_5_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_5/flower_5_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_5/flower_5_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7617377936840057,
+      "ms_ssim": 0.4809890687465668
+    },
+    {
+      "category": "flower",
+      "run": "flower_7_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_7/flower_7_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_7/flower_7_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6538949012756348,
+      "ms_ssim": 0.5471721291542053
+    },
+    {
+      "category": "flower",
+      "run": "flower_7_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_7/flower_7_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_7/flower_7_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.64396932721138,
+      "ms_ssim": 0.5781501531600952
+    },
+    {
+      "category": "flower",
+      "run": "flower_7_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_7/flower_7_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_7/flower_7_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6196999549865723,
+      "ms_ssim": 0.5957516431808472
+    },
+    {
+      "category": "flower",
+      "run": "flower_9_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_9/flower_9_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_9/flower_9_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.8048067390918732,
+      "ms_ssim": 0.4320891201496124
+    },
+    {
+      "category": "flower",
+      "run": "flower_9_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_9/flower_9_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_9/flower_9_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7254712879657745,
+      "ms_ssim": 0.39713340997695923
+    },
+    {
+      "category": "flower",
+      "run": "flower_9_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_9/flower_9_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/flower/flower_9/flower_9_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6995745301246643,
+      "ms_ssim": 0.4838615357875824
+    },
+    {
+      "category": "guitar",
+      "run": "guitar_0_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_0/guitar_0_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_0/guitar_0_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6173295974731445,
+      "ms_ssim": 0.5260621309280396
+    },
+    {
+      "category": "guitar",
+      "run": "guitar_0_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_0/guitar_0_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_0/guitar_0_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6357429325580597,
+      "ms_ssim": 0.5242722630500793
+    },
+    {
+      "category": "guitar",
+      "run": "guitar_0_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_0/guitar_0_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_0/guitar_0_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6054526269435883,
+      "ms_ssim": 0.5665898323059082
+    },
+    {
+      "category": "guitar",
+      "run": "guitar_10_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_10/guitar_10_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_10/guitar_10_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5444778800010681,
+      "ms_ssim": 0.6800355315208435
+    },
+    {
+      "category": "guitar",
+      "run": "guitar_10_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_10/guitar_10_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_10/guitar_10_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.44980138540267944,
+      "ms_ssim": 0.7821564674377441
+    },
+    {
+      "category": "guitar",
+      "run": "guitar_10_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_10/guitar_10_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_10/guitar_10_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.45862168073654175,
+      "ms_ssim": 0.8179169297218323
+    },
+    {
+      "category": "guitar",
+      "run": "guitar_12_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_12/guitar_12_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_12/guitar_12_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7809344977140427,
+      "ms_ssim": 0.5469542741775513
+    },
+    {
+      "category": "guitar",
+      "run": "guitar_12_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_12/guitar_12_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_12/guitar_12_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6954609453678131,
+      "ms_ssim": 0.645096480846405
+    },
+    {
+      "category": "guitar",
+      "run": "guitar_12_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_12/guitar_12_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_12/guitar_12_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6442676782608032,
+      "ms_ssim": 0.6308993697166443
+    },
+    {
+      "category": "guitar",
+      "run": "guitar_3_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_3/guitar_3_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_3/guitar_3_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.551312267780304,
+      "ms_ssim": 0.7350777387619019
+    },
+    {
+      "category": "guitar",
+      "run": "guitar_3_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_3/guitar_3_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_3/guitar_3_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5335313081741333,
+      "ms_ssim": 0.8288916945457458
+    },
+    {
+      "category": "guitar",
+      "run": "guitar_3_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_3/guitar_3_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_3/guitar_3_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5401690304279327,
+      "ms_ssim": 0.8198696970939636
+    },
+    {
+      "category": "guitar",
+      "run": "guitar_7_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_7/guitar_7_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_7/guitar_7_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5782104432582855,
+      "ms_ssim": 0.4574587047100067
+    },
+    {
+      "category": "guitar",
+      "run": "guitar_7_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_7/guitar_7_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_7/guitar_7_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5695720314979553,
+      "ms_ssim": 0.5368651151657104
+    },
+    {
+      "category": "guitar",
+      "run": "guitar_7_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_7/guitar_7_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/guitar/guitar_7/guitar_7_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6034089624881744,
+      "ms_ssim": 0.4748954474925995
+    },
+    {
+      "category": "horse",
+      "run": "horse_10_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_10/horse_10_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_10/horse_10_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7334822416305542,
+      "ms_ssim": 0.5662981271743774
+    },
+    {
+      "category": "horse",
+      "run": "horse_10_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_10/horse_10_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_10/horse_10_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6808847486972809,
+      "ms_ssim": 0.5871401429176331
+    },
+    {
+      "category": "horse",
+      "run": "horse_10_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_10/horse_10_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_10/horse_10_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6238496899604797,
+      "ms_ssim": 0.6608501672744751
+    },
+    {
+      "category": "horse",
+      "run": "horse_14_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_14/horse_14_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_14/horse_14_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6726139485836029,
+      "ms_ssim": 0.503035306930542
+    },
+    {
+      "category": "horse",
+      "run": "horse_14_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_14/horse_14_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_14/horse_14_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5899312496185303,
+      "ms_ssim": 0.5533448457717896
+    },
+    {
+      "category": "horse",
+      "run": "horse_14_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_14/horse_14_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_14/horse_14_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5759267807006836,
+      "ms_ssim": 0.6047719717025757
+    },
+    {
+      "category": "horse",
+      "run": "horse_3_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_3/horse_3_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_3/horse_3_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7038700878620148,
+      "ms_ssim": 0.47696322202682495
+    },
+    {
+      "category": "horse",
+      "run": "horse_3_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_3/horse_3_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_3/horse_3_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5978825688362122,
+      "ms_ssim": 0.5356168746948242
+    },
+    {
+      "category": "horse",
+      "run": "horse_3_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_3/horse_3_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_3/horse_3_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5926161706447601,
+      "ms_ssim": 0.5640091300010681
+    },
+    {
+      "category": "horse",
+      "run": "horse_8_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_8/horse_8_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_8/horse_8_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6000867486000061,
+      "ms_ssim": 0.6975521445274353
+    },
+    {
+      "category": "horse",
+      "run": "horse_8_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_8/horse_8_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_8/horse_8_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.573386013507843,
+      "ms_ssim": 0.711359977722168
+    },
+    {
+      "category": "horse",
+      "run": "horse_8_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_8/horse_8_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_8/horse_8_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5437950789928436,
+      "ms_ssim": 0.7051231861114502
+    },
+    {
+      "category": "horse",
+      "run": "horse_9_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_9/horse_9_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_9/horse_9_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5761882066726685,
+      "ms_ssim": 0.7678995132446289
+    },
+    {
+      "category": "horse",
+      "run": "horse_9_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_9/horse_9_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_9/horse_9_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.526836097240448,
+      "ms_ssim": 0.8017617464065552
+    },
+    {
+      "category": "horse",
+      "run": "horse_9_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_9/horse_9_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/horse/horse_9/horse_9_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.48685020208358765,
+      "ms_ssim": 0.8045638799667358
+    },
+    {
+      "category": "house",
+      "run": "house_15_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_15/house_15_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_15/house_15_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.8938492089509964,
+      "ms_ssim": 0.30949145555496216
+    },
+    {
+      "category": "house",
+      "run": "house_15_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_15/house_15_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_15/house_15_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.836959958076477,
+      "ms_ssim": 0.2878679037094116
+    },
+    {
+      "category": "house",
+      "run": "house_15_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_15/house_15_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_15/house_15_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.807510256767273,
+      "ms_ssim": 0.3221770226955414
+    },
+    {
+      "category": "house",
+      "run": "house_21_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_21/house_21_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_21/house_21_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7707809507846832,
+      "ms_ssim": 0.558704674243927
+    },
+    {
+      "category": "house",
+      "run": "house_21_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_21/house_21_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_21/house_21_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6101205945014954,
+      "ms_ssim": 0.6879408955574036
+    },
+    {
+      "category": "house",
+      "run": "house_21_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_21/house_21_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_21/house_21_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5824746489524841,
+      "ms_ssim": 0.7398133277893066
+    },
+    {
+      "category": "house",
+      "run": "house_24_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_24/house_24_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_24/house_24_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6801956295967102,
+      "ms_ssim": 0.6181395649909973
+    },
+    {
+      "category": "house",
+      "run": "house_24_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_24/house_24_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_24/house_24_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.653698056936264,
+      "ms_ssim": 0.7177608609199524
+    },
+    {
+      "category": "house",
+      "run": "house_24_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_24/house_24_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_24/house_24_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6007421612739563,
+      "ms_ssim": 0.6523284316062927
+    },
+    {
+      "category": "house",
+      "run": "house_27_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_27/house_27_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_27/house_27_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7743139564990997,
+      "ms_ssim": 0.4170757234096527
+    },
+    {
+      "category": "house",
+      "run": "house_27_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_27/house_27_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_27/house_27_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7926403433084488,
+      "ms_ssim": 0.44969063997268677
+    },
+    {
+      "category": "house",
+      "run": "house_27_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_27/house_27_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_27/house_27_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6929856240749359,
+      "ms_ssim": 0.5866088271141052
+    },
+    {
+      "category": "house",
+      "run": "house_7_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_7/house_7_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_7/house_7_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.8023693263530731,
+      "ms_ssim": 0.2565339505672455
+    },
+    {
+      "category": "house",
+      "run": "house_7_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_7/house_7_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_7/house_7_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.8211824297904968,
+      "ms_ssim": 0.30527395009994507
+    },
+    {
+      "category": "house",
+      "run": "house_7_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_7/house_7_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/house/house_7/house_7_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.7466724216938019,
+      "ms_ssim": 0.3090079724788666
+    },
+    {
+      "category": "rabbit",
+      "run": "rabbit_0_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_0/rabbit_0_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_0/rabbit_0_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6171782612800598,
+      "ms_ssim": 0.5715762972831726
+    },
+    {
+      "category": "rabbit",
+      "run": "rabbit_0_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_0/rabbit_0_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_0/rabbit_0_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5532459020614624,
+      "ms_ssim": 0.6465708613395691
+    },
+    {
+      "category": "rabbit",
+      "run": "rabbit_0_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_0/rabbit_0_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_0/rabbit_0_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5159421563148499,
+      "ms_ssim": 0.6303743720054626
+    },
+    {
+      "category": "rabbit",
+      "run": "rabbit_1_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_1/rabbit_1_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_1/rabbit_1_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6043967008590698,
+      "ms_ssim": 0.6031904220581055
+    },
+    {
+      "category": "rabbit",
+      "run": "rabbit_1_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_1/rabbit_1_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_1/rabbit_1_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6263793110847473,
+      "ms_ssim": 0.6170228123664856
+    },
+    {
+      "category": "rabbit",
+      "run": "rabbit_1_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_1/rabbit_1_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_1/rabbit_1_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5895727872848511,
+      "ms_ssim": 0.6277503371238708
+    },
+    {
+      "category": "rabbit",
+      "run": "rabbit_2_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_2/rabbit_2_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_2/rabbit_2_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6087120175361633,
+      "ms_ssim": 0.6764072179794312
+    },
+    {
+      "category": "rabbit",
+      "run": "rabbit_2_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_2/rabbit_2_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_2/rabbit_2_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5851687788963318,
+      "ms_ssim": 0.6554410457611084
+    },
+    {
+      "category": "rabbit",
+      "run": "rabbit_2_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_2/rabbit_2_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_2/rabbit_2_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5833798348903656,
+      "ms_ssim": 0.6781057119369507
+    },
+    {
+      "category": "rabbit",
+      "run": "rabbit_4_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_4/rabbit_4_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_4/rabbit_4_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5898067653179169,
+      "ms_ssim": 0.6249736547470093
+    },
+    {
+      "category": "rabbit",
+      "run": "rabbit_4_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_4/rabbit_4_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_4/rabbit_4_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5755842924118042,
+      "ms_ssim": 0.6232292652130127
+    },
+    {
+      "category": "rabbit",
+      "run": "rabbit_4_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_4/rabbit_4_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_4/rabbit_4_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5844306945800781,
+      "ms_ssim": 0.6248204112052917
+    },
+    {
+      "category": "rabbit",
+      "run": "rabbit_5_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_5/rabbit_5_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_5/rabbit_5_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6463312208652496,
+      "ms_ssim": 0.6220990419387817
+    },
+    {
+      "category": "rabbit",
+      "run": "rabbit_5_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_5/rabbit_5_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_5/rabbit_5_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5935491919517517,
+      "ms_ssim": 0.691777765750885
+    },
+    {
+      "category": "rabbit",
+      "run": "rabbit_5_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_5/rabbit_5_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/rabbit/rabbit_5/rabbit_5_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5883393585681915,
+      "ms_ssim": 0.7052904963493347
+    },
+    {
+      "category": "teapot",
+      "run": "teapot_0_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_0/teapot_0_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_0/teapot_0_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6578704118728638,
+      "ms_ssim": 0.6568160057067871
+    },
+    {
+      "category": "teapot",
+      "run": "teapot_0_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_0/teapot_0_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_0/teapot_0_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5732886791229248,
+      "ms_ssim": 0.7527065873146057
+    },
+    {
+      "category": "teapot",
+      "run": "teapot_0_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_0/teapot_0_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_0/teapot_0_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5465010404586792,
+      "ms_ssim": 0.7679460644721985
+    },
+    {
+      "category": "teapot",
+      "run": "teapot_1_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_1/teapot_1_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_1/teapot_1_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6384177803993225,
+      "ms_ssim": 0.5216590762138367
+    },
+    {
+      "category": "teapot",
+      "run": "teapot_1_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_1/teapot_1_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_1/teapot_1_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6085770428180695,
+      "ms_ssim": 0.5960451364517212
+    },
+    {
+      "category": "teapot",
+      "run": "teapot_1_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_1/teapot_1_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_1/teapot_1_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5550902485847473,
+      "ms_ssim": 0.624099612236023
+    },
+    {
+      "category": "teapot",
+      "run": "teapot_2_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_2/teapot_2_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_2/teapot_2_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5321244299411774,
+      "ms_ssim": 0.6179752349853516
+    },
+    {
+      "category": "teapot",
+      "run": "teapot_2_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_2/teapot_2_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_2/teapot_2_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5847801864147186,
+      "ms_ssim": 0.6587797999382019
+    },
+    {
+      "category": "teapot",
+      "run": "teapot_2_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_2/teapot_2_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_2/teapot_2_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.48535943031311035,
+      "ms_ssim": 0.6476068496704102
+    },
+    {
+      "category": "teapot",
+      "run": "teapot_3_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_3/teapot_3_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_3/teapot_3_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5819683074951172,
+      "ms_ssim": 0.5461875796318054
+    },
+    {
+      "category": "teapot",
+      "run": "teapot_3_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_3/teapot_3_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_3/teapot_3_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5853298604488373,
+      "ms_ssim": 0.5589747428894043
+    },
+    {
+      "category": "teapot",
+      "run": "teapot_3_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_3/teapot_3_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_3/teapot_3_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5454519987106323,
+      "ms_ssim": 0.5798889994621277
+    },
+    {
+      "category": "teapot",
+      "run": "teapot_4_16_strokes",
+      "num_strokes": 16,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_4/teapot_4_16_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_4/teapot_4_16_strokes/final_sketch.png",
+      "dreamsim_distance": 0.6379948854446411,
+      "ms_ssim": 0.6089324355125427
+    },
+    {
+      "category": "teapot",
+      "run": "teapot_4_24_strokes",
+      "num_strokes": 24,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_4/teapot_4_24_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_4/teapot_4_24_strokes/final_sketch.png",
+      "dreamsim_distance": 0.5757353901863098,
+      "ms_ssim": 0.7055500149726868
+    },
+    {
+      "category": "teapot",
+      "run": "teapot_4_32_strokes",
+      "num_strokes": 32,
+      "input_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_4/teapot_4_32_strokes/input.png",
+      "sketch_image": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1/teapot/teapot_4/teapot_4_32_strokes/final_sketch.png",
+      "dreamsim_distance": 0.57848060131073,
+      "ms_ssim": 0.7133916020393372
+    }
+  ],
+  "errors": []
+}

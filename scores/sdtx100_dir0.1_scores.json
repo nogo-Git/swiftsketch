@@ -1,0 +1,30 @@
+{
+  "metadata": {
+    "input_root": "SDXL_samples",
+    "sketch_root": "ControlSketch/output_sketches/20260820/sdtx100_dirx0.1",
+    "sketch_glob": "*/*_strokes/final_sketch.png",
+    "metrics": [
+      "dreamsim",
+      "ms-ssim"
+    ],
+    "requested_device": "cuda",
+    "batch_size": 16,
+    "progress_enabled": true,
+    "score_directions": {
+      "dreamsim_distance": "lower_is_better",
+      "ms_ssim": "higher_is_better"
+    },
+    "resolved_devices": {}
+  },
+  "summary": {
+    "num_scored": 0,
+    "mean_dreamsim_distance": null,
+    "mean_ms_ssim": null,
+    "by_category": {},
+    "by_num_strokes": {},
+    "num_discovery_errors": 0,
+    "num_sketches_found": 0
+  },
+  "results": [],
+  "errors": []
+}

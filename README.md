@@ -261,6 +261,19 @@ python -m refine_model.train_refine.train_refine_model \
     --train_data_dir "./controlsketch_data/train/cat" "./controlsketch_data/train/dog"
 ```
 
+## DreamSIM and MS-SSIM Evaluation
+
+To evaluate ControlSketch outputs with the perceptual metrics used in the paper, run:
+
+```bash
+python compute_controlsketch_perceptual_scores.py \
+  <input_image_directory> \
+  <sketch_output_directory> \
+  --output perceptual_scores.json
+```
+
+DreamSIM is a distance (lower is better). MS-SSIM is computed between an XDoG edge map of the input and the grayscale sketch (higher is better). See [the evaluation guide](docs/perceptual_evaluation.md) for preprocessing details and options.
+
 ## Citation
 If you make use of our work, please cite our paper:
 

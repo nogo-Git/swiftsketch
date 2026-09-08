@@ -49,6 +49,7 @@ diffusers==0.29.1
 dill==0.3.8
 dnspython==2.7.0
 docker-pycreds==0.4.0
+dreamsim==0.2.1
 docstring_parser==0.16
 easydict==1.13
 einops==0.8.0
@@ -184,6 +185,7 @@ python-multipart==0.0.9
 python-utils==3.8.2
 pytorch-lightning==2.3.0
 pytz==2024.1
+pytorch-msssim==1.0.0
 PyWavelets==1.6.0
 PyYAML==6.0
 pyzmq==25.1.2
