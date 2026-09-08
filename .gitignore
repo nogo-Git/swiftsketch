@@ -6,6 +6,9 @@ __pycache__/
 SwiftSketch/output_sketches/
 ControlSketch/output_sketches/
 SDXL_samples
+/ControlSketch/output_geo/
+/ControlSketch/output_grad_accept/
+/scores/bezier_discontinuity_visualizations/
 
 # models
 SwiftSketch/save/
@@ -22,6 +25,11 @@ preview
 # その他
 *.log
 *.tmp
+*.orig
 tmp
 plan/
 ControlSketch/sam3
+ControlSketch/wandb
+
+# DreamSIM model cache
+/models/
