@@ -134,20 +134,25 @@ def increase_object_size(renderer, scale_w, scale_h, original_center_x, original
        #Increases the size of the object on the canvas to its original size
        with torch.no_grad():
             w, h = scale_w, scale_h
-            canvas_width, canvas_height = 512, 512
+            canvas_width = renderer.canvas_width
+            canvas_height = renderer.canvas_height
             for path in renderer.shapes:
-                path.points = path.points / canvas_width
+                path.points[:, 0] /= canvas_width
+                path.points[:, 1] /= canvas_height
                 path.points = 2 * path.points - 1
                 path.points[:, 0] /= (w)  
                 path.points[:, 1] /= (h)  
-                path.points = 0.5 * (path.points + 1.0) * canvas_width
+                path.points = 0.5 * (path.points + 1.0)
+                path.points[:, 0] *= canvas_width
+                path.points[:, 1] *= canvas_height
                 center_x, center_y = canvas_width / 2, canvas_height / 2
                 path.points[:, 0] += (original_center_x * canvas_width - center_x)
                 path.points[:, 1] += (original_center_y * canvas_height - center_y)
 
 
 def resize_svg(renderer, target_width, target_height):
-    original_width= original_height = 512
+    original_width = renderer.canvas_width
+    original_height = renderer.canvas_height
     # Calculate scaling factors
     width_scale = target_width / original_width
     height_scale = target_height / original_height

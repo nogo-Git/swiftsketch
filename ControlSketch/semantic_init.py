@@ -50,28 +50,55 @@ def parse_semantic_weights(weights_text: str, parts: List[str]) -> Dict[str, flo
     return weights
 
 
-def allocate_points_by_score(scores: np.ndarray, total_points: int) -> np.ndarray:
-    if total_points <= 0:
-        return np.zeros(len(scores), dtype=np.int32)
-
-    if len(scores) == 0:
+def allocate(
+    weights,
+    n_total: int,
+    min_per_part: int = 1,
+    w_thresh: float = 0.05,
+) -> np.ndarray:
+    """Allocate an exact integer budget with lower bounds and largest remainders."""
+    weights = np.asarray(weights, dtype=np.float64)
+    if weights.ndim != 1:
+        raise ValueError("weights must be one-dimensional")
+    if n_total < 0 or min_per_part < 0:
+        raise ValueError("n_total and min_per_part must be non-negative")
+    if len(weights) == 0:
+        if n_total:
+            raise ValueError("cannot allocate a positive budget to no parts")
         return np.zeros(0, dtype=np.int32)
 
-    scores = np.asarray(scores, dtype=np.float64)
-    if scores.sum() <= 0:
-        scores = np.ones_like(scores)
+    weights = np.where(np.isfinite(weights) & (weights >= 0), weights, 0.0)
+    if weights.sum() <= 0:
+        weights = np.ones_like(weights)
+    weights = weights / weights.sum()
+    allocation = np.zeros(len(weights), dtype=np.int32)
 
-    raw = scores / scores.sum() * total_points
-    allocation = np.floor(raw).astype(np.int32)
+    eligible = np.flatnonzero(weights >= w_thresh)
+    eligible = eligible[np.argsort(-weights[eligible], kind="stable")]
+    remaining = int(n_total)
+    for index in eligible:
+        if remaining < min_per_part:
+            break
+        allocation[index] += min_per_part
+        remaining -= min_per_part
 
-    remaining = total_points - int(allocation.sum())
-    if remaining > 0:
-        fractions = raw - allocation
-        order = np.argsort(-fractions)
-        for index in order[:remaining]:
-            allocation[index] += 1
+    if remaining:
+        raw = weights * remaining
+        extra = np.floor(raw).astype(np.int32)
+        allocation += extra
+        remainder = remaining - int(extra.sum())
+        if remainder:
+            fractions = raw - extra
+            order = np.argsort(-fractions, kind="stable")
+            allocation[order[:remainder]] += 1
 
+    assert int(allocation.sum()) == n_total
     return allocation
+
+
+def allocate_points_by_score(scores: np.ndarray, total_points: int) -> np.ndarray:
+    """Backward-compatible unconstrained largest-remainder allocation."""
+    return allocate(scores, total_points, min_per_part=0, w_thresh=np.inf)
 
 
 def _mask_to_numpy(mask, target_size: Tuple[int, int]) -> np.ndarray:
@@ -346,6 +373,7 @@ def build_semantic_initial_points(
     curvature_window: int = 6,
     min_sampling_density: float = 0.20,
     return_metadata: bool = False,
+    return_analysis_contours: bool = False,
 ) -> Optional[Tuple[np.ndarray, np.ndarray]]:
     target_size = (canvas_height, canvas_width)
     foreground_mask = _mask_to_numpy(mask, target_size)
@@ -426,8 +454,45 @@ def build_semantic_initial_points(
     if not regions:
         return None
 
-    scores = np.array([region["score"] for region in regions], dtype=np.float64)
-    allocations = allocate_points_by_score(scores, total_points)
+    part_order = list(dict.fromkeys(region["part"] for region in regions))
+    part_weights = np.array([
+        next(region["weight"] for region in regions if region["part"] == part)
+        for part in part_order
+    ], dtype=np.float64)
+    if "outline" in part_order and len(part_order) > 1:
+        outline_index = part_order.index("outline")
+        semantic_indices = [
+            index for index in range(len(part_order))
+            if index != outline_index
+        ]
+        grouped = allocate(
+            [part_weights[outline_index], part_weights[semantic_indices].sum()],
+            total_points, min_per_part=0, w_thresh=np.inf,
+        )
+        part_allocations = np.zeros(len(part_order), dtype=np.int32)
+        part_allocations[outline_index] = grouped[0]
+        part_allocations[semantic_indices] = allocate(
+            part_weights[semantic_indices], int(grouped[1]),
+            min_per_part=1, w_thresh=0.05,
+        )
+    else:
+        part_allocations = allocate(
+            part_weights, total_points, min_per_part=1, w_thresh=0.05
+        )
+    allocations = np.zeros(len(regions), dtype=np.int32)
+    for part, part_count in zip(part_order, part_allocations):
+        region_indices = [
+            index for index, region in enumerate(regions)
+            if region["part"] == part
+        ]
+        perimeters = np.array([
+            regions[index]["perimeter"] for index in region_indices
+        ], dtype=np.float64)
+        instance_allocations = allocate(
+            perimeters, int(part_count), min_per_part=0, w_thresh=np.inf
+        )
+        allocations[region_indices] = instance_allocations
+    assert int(allocations.sum()) == total_points
 
     sampled_points = []
     sampled_parts = []
@@ -473,6 +538,20 @@ def build_semantic_initial_points(
     vis = _make_visualization(foreground_mask, regions, allocations)
 
     if return_metadata:
+        if return_analysis_contours:
+            analysis_contours = {}
+            for region in regions:
+                analysis_contours.setdefault(region["part"], []).append({
+                    "points": region["contour"].copy(),
+                    "closed": region["closed"],
+                })
+            return (
+                points,
+                vis,
+                sampled_parts,
+                part_masks_for_loss,
+                analysis_contours,
+            )
         return points, vis, sampled_parts, part_masks_for_loss
 
     return points, vis

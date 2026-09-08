@@ -22,6 +22,20 @@ TARGET_IMAGE_EXTENSIONS = (
 TARGET_FILE_EXTENSIONS = TARGET_IMAGE_EXTENSIONS + TARGET_DICT_EXTENSIONS
 
 
+def parse_bool(value):
+    if isinstance(value, bool):
+        return value
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    raise argparse.ArgumentTypeError(
+        "expected a boolean value (true/false)"
+    )
+
+
+
 def set_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
@@ -98,7 +112,17 @@ def parse_arguments():
                         default="outline=1.0,eyes=3.0,nose=2.0,ears=1.5,stripes=0.5,pattern=0.5",
                         help="comma-separated semantic weights, e.g. outline=1.0,eyes=3.0")
     parser.add_argument("--semantic_vlm_model", type=str, default="Qwen/Qwen2.5-VL-7B-Instruct")
-    parser.add_argument("--semantic_vlm_max_parts", type=int, default=8)
+    parser.add_argument(
+        "--max_parts", "--semantic_vlm_max_parts",
+        dest="max_parts", type=int, default=8,
+    )
+    parser.add_argument("--vlm_seed", type=int, default=0)
+    parser.add_argument("--vlm_temperature", type=float, default=0.3)
+    parser.add_argument(
+        "--rebuild_reference", type=parse_bool, nargs="?",
+        const=True, default=False,
+    )
+    parser.add_argument("--cache_dir", type=str, default="")
     parser.add_argument("--semantic_vlm_weight_min", type=float, default=0.5)
     parser.add_argument("--semantic_vlm_weight_max", type=float, default=4.0)
     parser.add_argument("--semantic_fallback", type=str, default="kmeans",
@@ -136,6 +160,35 @@ def parse_arguments():
     parser.add_argument("--semantic_sdt_inside_weight", type=float, default=0.5)
     parser.add_argument("--semantic_sdt_samples_per_segment", type=int, default=8)
     parser.add_argument("--semantic_sdt_loss_ramp_iters", type=int, default=0)
+    parser.add_argument("--semantic_dir_loss_weight", type=float, default=0.0)
+    parser.add_argument("--semantic_dir_samples_per_segment", type=int, default=8)
+    parser.add_argument("--semantic_dir_gradient_min_norm", type=float, default=1e-3)
+    parser.add_argument("--semantic_dir_loss_ramp_iters", type=int, default=0)
+    parser.add_argument("--geo_pos_weight", type=float, default=1.0)
+    parser.add_argument("--geo_cov_weight", type=float, default=1.0)
+    parser.add_argument("--geo_tan_weight", type=float, default=0.0)
+    parser.add_argument("--geo_anchor_weight", type=float, default=10.0)
+    parser.add_argument("--geo_tau0", type=float, default=16.0,
+                        help="initial pseudo-Huber scale in pixels at width 224")
+    parser.add_argument("--geo_tau1", type=float, default=2.0,
+                        help="final pseudo-Huber scale in pixels at width 224")
+    parser.add_argument("--geo_hold", type=float, default=0.5)
+    parser.add_argument("--geo_decay", type=float, default=0.2)
+    parser.add_argument(
+        "--grad_log", type=parse_bool, nargs="?", const=True, default=True,
+        help="record per-step SDS/geometry gradient diagnostics",
+    )
+    parser.add_argument(
+        "--grad_log_every", type=int, default=1,
+        help="interval for rows written to grad_log.csv",
+    )
+    parser.add_argument("--geo_polyline_segments", type=int, default=16)
+    parser.add_argument("--geo_cov_subsample", type=int, default=4096)
+    parser.add_argument("--geo_chunk", type=int, default=4096)
+    parser.add_argument("--geo_min_component_len", type=int, default=15,
+                        help="minimum edge length at width 224")
+    parser.add_argument("--geo_blur", type=float, default=1.0)
+    parser.add_argument("--geo_structure_rho", type=float, default=2.0)
     parser.add_argument("--sam3_python", type=str, default="",
                             help="path to python executable in sam3 conda env")
     parser.add_argument("--sam3_checkpoint_path", type=str, default="",
@@ -164,6 +217,9 @@ def parse_arguments():
    
 
     args = parser.parse_args()
+    if args.grad_log_every < 1:
+        parser.error("--grad_log_every must be at least 1")
+
     set_seed(args.seed)
 
     assert os.path.isfile(args.target), f"{args.target} does not exists!"
@@ -179,6 +235,9 @@ def parse_arguments():
     if not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
     args.output_dir_target=output_dir
+    if not args.cache_dir:
+        args.cache_dir = os.path.join(output_dir, "cache")
+    args.semantic_vlm_max_parts = args.max_parts
 
     if args.wandb_name=="defualt":
         args.wandb_name = f"{test_name}_{args.num_strokes}_strokes"

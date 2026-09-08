@@ -3,10 +3,10 @@ set -euo pipefail
 
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 samples_dir="${SAMPLES_DIR:-$script_dir/../SDXL_samples}"
-output_dir="${OUTPUT_DIR:-$script_dir/output_sketches/SDXL_semantic}"
+output_dir="${OUTPUT_DIR:-$script_dir/output_sketches/SDXL_semantic_overlap}"
 gpu_id="${GPU_ID:-1}"
 control_sketch_python="${CONTROL_SKETCH_PYTHON:-python}"
-sam3_python="${SAM3_PYTHON:-/mnt/cggfs01disk/takei/miniconda3/envs/sam3_env/bin/python}"
+sam3_python="${SAM3_PYTHON:-python}"
 stroke_counts=(16 24 32)
 
 if [[ ! -d "$samples_dir" ]]; then
@@ -14,8 +14,8 @@ if [[ ! -d "$samples_dir" ]]; then
     exit 1
 fi
 
-if [[ ! -x "$sam3_python" ]]; then
-    echo "SAM3 Python executable does not exist: $sam3_python" >&2
+if ! command -v "$sam3_python" >/dev/null 2>&1; then
+    echo "SAM3 Python is not available: $sam3_python" >&2
     echo "Set the correct path with SAM3_PYTHON=/path/to/sam3_env/bin/python" >&2
     exit 1
 fi
